@@ -21,8 +21,6 @@ public class UserCreationRequest {
 
     private String email;
 
-    private String phone;
-
     private String avatarUrl;
 
     private Set<Role> roles;

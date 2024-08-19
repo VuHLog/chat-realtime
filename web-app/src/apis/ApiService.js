@@ -3,7 +3,7 @@ import { useBaseStore } from "@/store/index.js";
 
 // Tạo một instance của axios với các default config
 const instance = axios.create({
-  baseURL: "http://localhost:8080",
+  baseURL: "http://localhost:8888",
 
   headers: {
     Accept: "application/json",
@@ -27,7 +27,6 @@ instance.interceptors.request.use(
 instance.interceptors.response.use(
   (response) => response,
   async (error) => {
-    console.log(error.response);
     const originalConfig = error.config;
     if (originalConfig.url !== "/auth/token" && error.response) {
       // Access Token was expired
@@ -37,7 +36,7 @@ instance.interceptors.response.use(
         try {
           const token = localStorage.getItem("token");
           localStorage.removeItem("token");
-          const rs = await base.post("/auth/refresh", token);
+          const rs = await base.post("/api/identity/auth/refresh", token);
 
           const accessToken = rs.result.token;
 

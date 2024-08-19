@@ -15,7 +15,6 @@ import java.util.Set;
 public class UserUpdateRequest {
     private String fullName;
 
-
     private String password;
 
     private String email;

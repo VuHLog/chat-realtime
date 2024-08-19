@@ -17,6 +17,52 @@ ol {
   border: 0;
 }
 
-body {
-  background-color: #424040 !important;
+// height
+.min-h-100vh {
+  min-height: 100vh;
+}
+
+.width-form-login {
+  width: 600px;
+}
+
+// width
+.min-w-100vh {
+  min-width: 100vh;
+}
+
+// text
+.text-12{
+  font-size: 0.75rem;
+}
+.text-14{
+  font-size: 0.875rem;
+}
+.text-16 {
+  font-size: 1rem;
+}
+
+//border-radius
+.rounded-ts-lg {
+  border-top-left-radius: 8px;
+}
+
+.rounded-te-lg {
+  border-top-right-radius: 8px;
+}
+
+.rounded-ts-xl {
+  border-top-left-radius: 24px;
+}
+
+.rounded-te-xl {
+  border-top-right-radius: 24px;
+}
+
+//input
+.form-input:focus-visible{
+  border-block-end-width: 1px !important;
+    border-block-end-style: solid !important;
+    border-block-end-color: #AA00FF !important;
+  outline: none;
 }

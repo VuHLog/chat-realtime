@@ -22,7 +22,7 @@ import org.springframework.web.client.RestTemplate;
 public class SecurityConfiguration {
 
     private final String[] PUBLIC_ENDPOINTS =
-            {"/api/users","/api/variants","/api/mobilePhones","/auth/token","/auth/refresh","/auth/google","/auth/introspect","/auth/logout","/auth/refresh","/api/orders"};
+            {"/users/registration","/auth/token","/auth/refresh","/auth/introspect","/auth/logout","/auth/refresh", "/cloudinary/upload"};
 
     @Autowired
     @Lazy
@@ -37,10 +37,8 @@ public class SecurityConfiguration {
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception{
         httpSecurity.authorizeHttpRequests(
                 configurer -> configurer
-                        .requestMatchers( HttpMethod.GET, "/api/orders","/api/users/*").authenticated()
                         .requestMatchers( HttpMethod.GET).permitAll()
                         .requestMatchers( HttpMethod.POST,PUBLIC_ENDPOINTS).permitAll()
-                        .requestMatchers(HttpMethod.PUT,"/api/movies/*").permitAll()
                         .anyRequest().authenticated()
         );
 

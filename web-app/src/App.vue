@@ -2,8 +2,8 @@
 </script>
 
 <template>
-  <div>
-    hello world
+  <div class="bg-purple-lighten-1 min-h-100vh">
+    <router-view></router-view>
   </div>
 </template>
 

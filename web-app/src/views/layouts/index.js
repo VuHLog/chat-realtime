@@ -2,48 +2,27 @@ import { createRouter, createWebHistory } from "vue-router";
 import { jwtDecode } from "jwt-decode";
 import { useBaseStore } from "@/store/index.js";
 import DefaultLayout from "@layouts/DefaultLayout.vue";
-import AuthLayout from "@layouts/AuthLayout.vue";
 import SignIn from "@pages/SignIn.vue";
-import SignUp from "@pages/SignUp.vue";
-import Home from "@pages/Home.vue";
 
 const routes = [
   {
     path: "/",
-    name: "/",
+    name: "acb",
     redirect: "/home",
     component: DefaultLayout,
     meta: { requiresAuth: true },
-    children: [
-      { 
-      path: "/home",
-      name: "Home",
-      component: Home
-      }
-    ],
+    children: [],
   },
   {
-    path: "/auth",
-    name: "Auth",
-    component: AuthLayout,
-    children: [
-      {
-        path: "sign-in",
-        name: "Sign In",
-        component: SignIn,
-      },
-      {
-        path: "sign-up",
-        name: "Sign Up",
-        component: SignUp,
-      },
-    ],
+    path: "/sign-in",
+    name: "Sign In",
+    component: SignIn,
   },
 
-  {
-    path: "/:pathMatch(.*)*",
-    redirect: "/home",
-  },
+  // {
+  //   path: "/:pathMatch(.*)*",
+  //   redirect: "/home",
+  // },
 ];
 
 const router = createRouter({
@@ -57,7 +36,7 @@ router.beforeEach((to, from, next) => {
   if (to.matched.some((record) => record.meta.requiresAuth)) {
     if (!isLoggedIn() || !store.isLoggedIn) {
       next({
-        path: "/auth/sign-in",
+        path: "/sign-in",
         query: { redirect: to.fullPath },
       });
     } else {

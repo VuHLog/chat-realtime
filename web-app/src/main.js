@@ -55,7 +55,7 @@ const vuetify = createVuetify({
 app.use(router);
 app.use(vuetify);
 app.use(pinia);
-app.use(bootstrap);
+// app.use(bootstrap);
 app.use(VueSweetalert2);
 
 const config = app.config;
