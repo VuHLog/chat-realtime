@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -22,4 +23,9 @@ public class GroupMember {
 
     @Column
     private Timestamp addedAt;
+
+    @PrePersist
+    public void onCreate() {
+        addedAt = Timestamp.valueOf(LocalDateTime.now());
+    }
 }

@@ -17,8 +17,9 @@ public class ReadReceipts {
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
-    @Column
-    private String messageId;
+    @ManyToOne
+    @JoinColumn(name = "message_id")
+    private Messages message;
 
     @Column
     private String userId;

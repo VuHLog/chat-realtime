@@ -7,6 +7,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.util.Set;
 
 @Data
 @AllArgsConstructor
@@ -18,9 +20,6 @@ public class Messages {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
-
-    @Column
-    private String conversationId;
 
     @Column
     private String senderId;
@@ -36,4 +35,16 @@ public class Messages {
 
     @Column
     private String status;
+
+    @ManyToOne
+    @JoinColumn(name = "conversation_id")
+    private Conversations conversation;
+
+    @OneToMany(mappedBy = "message")
+    private Set<ReadReceipts> readReceipts;
+
+    @PrePersist
+    protected void onCreate() {
+        timeSent = Timestamp.valueOf(LocalDateTime.now());
+    }
 }

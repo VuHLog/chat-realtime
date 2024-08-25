@@ -39,7 +39,7 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
     private String[] publicEndpoints = {
             "/identity/auth/.*",
             "/identity/users/registration",
-            "/identity/cloudinary/upload"
+            "/identity/cloudinary/upload",
     };
 
     @Value("${app.api-prefix}")
@@ -48,7 +48,7 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
-        log.info("Enter authentication filter....");
+        log.info("Enter authentication filter...." + exchange.getRequest().getURI());
 
         // check public endpoint => next
         if (isPublicEndpoint(exchange.getRequest()))

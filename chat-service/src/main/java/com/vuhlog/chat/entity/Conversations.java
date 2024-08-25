@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -21,14 +23,28 @@ public class Conversations {
     private String type;
 
     @Column
-    private String creator_id;
+    private String creatorId;
 
     @Column
-    private Timestamp created_at;
+    private Timestamp createdAt;
 
     @Column
-    private Timestamp updated_at;
+    private Timestamp updatedAt;
 
     @Column
     private String lastMessageId;
+
+    @OneToMany(mappedBy = "conversation")
+    private Set<Messages> messages;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = Timestamp.valueOf(LocalDateTime.now());
+        updatedAt = Timestamp.valueOf(LocalDateTime.now());
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = Timestamp.valueOf(LocalDateTime.now());
+    }
 }
