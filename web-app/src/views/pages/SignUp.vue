@@ -42,7 +42,7 @@ async function submitFile() {
 
   formData.append("image", file.value);
   await proxy.$api
-    .postFile("/api/identity/cloudinary/upload", formData)
+    .postFile("/identity/cloudinary/upload", formData)
     .then((res) => {
       user.value.avatarUrl = res.url;
       console.log(res.url);
@@ -94,7 +94,7 @@ async function signUp() {
   }
 
   await proxy.$api
-    .post("/api/identity/users/registration", user.value)
+    .post("/identity/users/registration", user.value)
     .then((res) => {
       console.log("sign up");
 

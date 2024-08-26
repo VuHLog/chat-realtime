@@ -3,7 +3,7 @@ import { useBaseStore } from "@/store/index.js";
 
 // Tạo một instance của axios với các default config
 const instance = axios.create({
-  baseURL: "http://localhost:8888",
+  baseURL: "http://localhost:8888/api",
 
   headers: {
     Accept: "application/json",

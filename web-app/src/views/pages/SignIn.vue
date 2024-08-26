@@ -33,7 +33,7 @@ async function signIn() {
   }
 
   await proxy.$api
-    .post("/api/identity/auth/token", userVal)
+    .post("/identity/auth/token", userVal)
     .then((res) => {
       TokenService.setLocalAccessToken(res.result.token);
       store.isLoggedIn = true;
