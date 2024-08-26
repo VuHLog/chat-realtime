@@ -1,5 +1,7 @@
 package com.vuhlog.chat.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -20,7 +22,7 @@ public class Conversations {
     private String id;
 
     @Column
-    private String type;
+    private int type;
 
     @Column
     private String creatorId;
@@ -35,7 +37,12 @@ public class Conversations {
     private String lastMessageId;
 
     @OneToMany(mappedBy = "conversation")
+    @JsonManagedReference
     private Set<Messages> messages;
+
+    @OneToMany(mappedBy = "conversation", cascade = CascadeType.ALL)
+    @JsonManagedReference
+    private Set<GroupMember> groupMembers;
 
     @PrePersist
     protected void onCreate() {

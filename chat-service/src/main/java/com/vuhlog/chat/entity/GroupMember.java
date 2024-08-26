@@ -1,5 +1,6 @@
 package com.vuhlog.chat.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -23,6 +24,11 @@ public class GroupMember {
 
     @Column
     private Timestamp addedAt;
+
+    @ManyToOne
+    @JoinColumn(name = "conversation_id")
+    @JsonBackReference
+    private Conversations conversation;
 
     @PrePersist
     public void onCreate() {

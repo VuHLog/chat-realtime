@@ -1,4 +1,11 @@
-<script setup></script>
+<script setup>
+const props = defineProps({
+  receiver:{
+    type: Object,
+    required: true,
+  }
+})
+</script>
 
 <template>
   <div class="header px-4 py-3 d-flex justify-space-between border-b-sm">
@@ -6,11 +13,11 @@
       <div class="d-flex align-center">
         <img
           class="height-avatar-thumbnail width-avatar-thumbnail rounded-circle object-cover object-center"
-          src="https://res.cloudinary.com/cloud1412/image/upload/v1724172738/avatar_cv_fj5vuf.jpg"
+          :src="props.receiver?.avatarUrl"
           alt=""
         />
       </div>
-      <div class="ml-2 font-weight-bold">Long Hoàng</div>
+      <div class="ml-2 font-weight-bold">{{ props.receiver?.fullName }}</div>
     </div>
     <div class="d-flex align-center text-purple-accent-4">
         <div class=" cursor-pointer">

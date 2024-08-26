@@ -13,6 +13,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/users")
 @Slf4j
@@ -69,6 +71,13 @@ public class UserController {
     public ApiResponse<UserResponse> getUserByUsername(@PathVariable String username){
         return ApiResponse.<UserResponse>builder()
                 .result(userService.getByUsername(username))
+                .build();
+    }
+
+    @GetMapping("/username")
+    public ApiResponse<List<UserResponse>> getUserByUsernamesContaining(@RequestParam String username){
+        return ApiResponse.<List<UserResponse>>builder()
+                .result(userService.getByUsernameContaining(username))
                 .build();
     }
 

@@ -1,5 +1,6 @@
 import { defineStore } from "pinia";
 import { jwtDecode } from "jwt-decode";
+import {base} from "@/apis/ApiService.js"
 import TokenService from "@/service/TokenService.js"
 
 const token = TokenService.getLocalAccessToken();
@@ -24,5 +25,23 @@ export const useBaseStore = defineStore("base", {
       this.isLoggedIn = true;
       localStorage.setItem("token",accessToken);
     },
+    async getMyInfo(){
+      let response = null;
+      await base.get("/identity/users/myInfo").then((res) => {
+        response = res.result;
+      })
+      .catch((error) => console.log(error)
+      )
+      return response;
+    },
+    async getUserById(userId){
+      let response = null;
+      await base.get("/identity/users/"+ userId).then((res) => {
+        response = res.result;
+      })
+      .catch((error) => console.log(error)
+      )
+      return response;
+    }
   },
 });

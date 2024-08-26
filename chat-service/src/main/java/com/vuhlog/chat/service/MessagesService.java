@@ -5,4 +5,8 @@ import com.vuhlog.chat.dto.Response.MessagesResponse;
 
 public interface MessagesService {
     public MessagesResponse sendMessage(MessagesRequest request, String conversationId);
+
+    public MessagesResponse getMessageById(String messageId);
+
+    public MessagesResponse MessageResponseWS(String messageId);
 }

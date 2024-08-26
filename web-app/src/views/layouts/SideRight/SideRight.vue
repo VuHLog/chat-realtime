@@ -1,30 +1,73 @@
 <script setup>
-import { onMounted, onBeforeUnmount, ref, watch } from "vue";
-
+import {
+  onMounted,
+  onBeforeUnmount,
+  ref,
+  watch,
+  getCurrentInstance,
+} from "vue";
 import { Client } from "@stomp/stompjs";
-
-import Header from "./Header.vue";
+import { useRoute } from "vue-router";
 import { useBaseStore } from "@/store/index.js";
+import TokenService from "@/service/TokenService.js";
+import Header from "./Header.vue";
 
 const store = useBaseStore();
+const { proxy } = getCurrentInstance();
+const route = useRoute();
+
+const conversationId = ref(route.params.conversationId);
 
 // Các tham chiếu đến các phần tử Header và Footer và body
 const headerRef = ref(null);
 const footerRef = ref(null);
 const bodyRef = ref(null);
 
+const myInfo = ref();
+const conversation = ref();
+const receiver = ref();
 onMounted(async () => {
   bodyRef.value.style.height = `calc(100vh - ${
     headerRef.value.offsetHeight + footerRef.value.offsetHeight
   }px)`;
-  console.log("bodyRef: ", bodyRef.value.offsetHeight);
 
+  myInfo.value = await store.getMyInfo();
+  await loadData();
   await connect();
 });
 
-onBeforeUnmount(()=>{
+// load lại data trong component khi path thay đổi
+watch(
+  () => route.params.conversationId,
+  (newVal) => {
+    conversationId.value = newVal;
+    loadData();
+  }
+);
+
+async function loadData() {
+  await proxy.$api
+    .get("/chat/conversations/" + conversationId.value)
+    .then((res) => {
+      conversation.value = res.result;
+    })
+    .catch((error) => {
+      console.log(error);
+    });
+  let conversationVal = conversation.value;
+  if (conversationVal.type === 1) {
+    let receiverId = conversationVal.groupMembers.find((value) => {
+      return value.userId !== myInfo.value.id;
+    }).userId;
+    receiver.value = await store.getUserById(receiverId);
+  }
+}
+
+//#region
+//xu ly real time voi stomp client
+onBeforeUnmount(() => {
   disconnect();
-})
+});
 
 const messageText = ref("");
 const messages = ref([]);
@@ -48,9 +91,12 @@ const stompClient = new Client({
   brokerURL: "ws://localhost:8081/chat/ws",
   onConnect: (frame) => {
     console.log("Connected: " + frame);
-    stompClient.subscribe("/topic/conversations/1", (response) => {
-      messages.value.unshift(JSON.parse(response.body));
-    });
+    stompClient.subscribe(
+      "/topic/conversations/" + conversationId.value,
+      (response) => {
+        messages.value.unshift(JSON.parse(response.body));
+      }
+    );
   },
   onWebSocketError: (error) => {
     console.error("Error with websocket", error);
@@ -71,25 +117,64 @@ function disconnect() {
 }
 
 async function sendMessage() {
+  let messageRequest = {
+    content: messageText.value,
+    contentType: "text",
+    conversationId: conversationId.value,
+  };
+  let messageId = null;
+  await proxy.$api
+    .post("/chat/messages", messageRequest)
+    .then((res) => {
+      messageId = res.result.id;
+    })
+    .catch((error) => {
+      console.log(error);
+    });
+
   stompClient.publish({
     destination: "/app/sendMessage",
     body: JSON.stringify({
-      content: messageText.value,
-      contentType: "text",
-      conversationId: 1,
-    }),
+    conversationId: messageRequest.conversationId,
+    messagesId: messageId,
+  }),
   });
   messageText.value = "";
 }
-
+//#endregion
 </script>
 
 <template>
   <div class="h-100 position-relative d-flex flex-column">
     <Header
       ref="headerRef"
+      :receiver="receiver"
       class="position-sticky top-0 right-0 left-0 z-index-99 bg-white"
     ></Header>
+
+    <div
+      class="d-flex flex-column align-center mt-10"
+      v-if="messages.length === 0"
+    >
+      <div>
+        <img
+          class="height-avatar-thumbnail width-avatar-thumbnail rounded-circle object-cover object-center"
+          :src="receiver?.avatarUrl"
+          alt=""
+        />
+        <v-tooltip activator="parent" location="bottom">
+          <span class="text-12">{{ receiver?.username }}</span>
+        </v-tooltip>
+      </div>
+      <div class="ml-2 font-weight-bold">{{ receiver?.fullName }}</div>
+      <div class="text-deep-purple-accent-3 cursor-pointer">
+        <font-awesome-icon :icon="['fas', 'user-plus']" />
+        <v-tooltip activator="parent" location="bottom">
+          <span class="text-12">Thêm bạn bè</span>
+        </v-tooltip>
+      </div>
+    </div>
+
     <div
       ref="bodyRef"
       class="flex-grow-1 d-flex flex-column-reverse overflow-y-auto"
@@ -101,9 +186,15 @@ async function sendMessage() {
           >
             {{ message.timeSent }}
           </div>
-          <div class="d-flex">
+          <div
+            class="d-flex"
+            :class="{ 'justify-end': message.senderId === myInfo.id }"
+          >
             <div class="d-flex max-w-40p px-4">
-              <div class="d-flex align-end">
+              <div
+                class="d-flex align-end"
+                v-if="message.senderId !== myInfo.id"
+              >
                 <img
                   class="width-avatar-chat height-avatar-chat rounded-circle object-cover object-center"
                   src="https://res.cloudinary.com/cloud1412/image/upload/v1724172738/avatar_cv_fj5vuf.jpg"
@@ -111,7 +202,8 @@ async function sendMessage() {
                 />
               </div>
               <p
-                class="text-wrap w-100 bg-purple-accent-4 rounded-xl text-14 px-3 py-2 ml-2"
+                class="text-wrap w-100 rounded-xl text-14 px-3 py-2 ml-2"
+                :class="message.senderId === myInfo.id ? 'bg-purple-accent-4':'bg-grey-lighten-3'"
               >
                 {{ message.content }}
               </p>

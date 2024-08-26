@@ -50,15 +50,29 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserResponse getByUsername(String username) {
-        return userMapper.toUserResponse(usersRepository.findByUsername(username).get());
+        Users user = usersRepository.findByUsername(username)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+        return userMapper.toUserResponse(user);
+    }
+
+    @Override
+    public List<UserResponse> getByUsernameContaining(String username) {
+        List<Users> users = usersRepository.findByUsernameContainingIgnoreCase(username);
+
+        // loai bo ket qua trung voi my username
+        String myUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+        users = users.stream().filter(user -> !myUsername.equals(user.getUsername())).toList();
+
+        if(users.isEmpty()) throw new AppException(ErrorCode.USER_NOT_EXISTED);
+        return users.stream().map(userMapper::toUserResponse).toList();
     }
 
     @Override
     public UserResponse addUser(UserCreationRequest request) {
-        if(usersRepository.existsByUsername(request.getUsername()))
+        if (usersRepository.existsByUsername(request.getUsername()))
             throw new AppException(ErrorCode.USER_EXISTED);
 
-        if(usersRepository.existsByEmail(request.getEmail()))
+        if (usersRepository.existsByEmail(request.getEmail()))
             throw new AppException(ErrorCode.Email_EXISTED);
 
         Users user = userMapper.toUser(request);
@@ -66,13 +80,13 @@ public class UserServiceImpl implements UserService {
 
         //xu ly roles request
         Set<User_Role> user_roles = new HashSet<>();
-        if(request.getRoles() == null) {
+        if (request.getRoles() == null) {
             User_Role user_role = new User_Role();
             user_role.setRole(roleRepository.findByRoleName("User"));
             user_role.setUser(user);
             user_roles.add(user_role);
-        }else {
-            request.getRoles().stream().forEach(s -> user_roles.add(new User_Role(user,s)));
+        } else {
+            request.getRoles().stream().forEach(s -> user_roles.add(new User_Role(user, s)));
         }
         user.setUser_roles(user_roles);
 
@@ -89,7 +103,7 @@ public class UserServiceImpl implements UserService {
         return usersRepository.findByUsernameContainsIgnoreCase(s, pageable).map(userMapper::toUserResponse);
     }
 
-    public UserResponse getMyInfo(){
+    public UserResponse getMyInfo() {
         var context = SecurityContextHolder.getContext();
         String name = context.getAuthentication().getName();
 
@@ -110,8 +124,8 @@ public class UserServiceImpl implements UserService {
 
         Set<User_Role> user_roles = new HashSet<>();
         List<Role> rolesRequest = request.getRoles().stream().toList();
-        for(int i=0; i<rolesRequest.size();i++){
-            user_roles.add(new User_Role(user,rolesRequest.get(i)));
+        for (int i = 0; i < rolesRequest.size(); i++) {
+            user_roles.add(new User_Role(user, rolesRequest.get(i)));
         }
 
         user.setUser_roles(user_roles);

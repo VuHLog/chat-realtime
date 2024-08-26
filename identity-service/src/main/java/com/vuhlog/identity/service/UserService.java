@@ -6,6 +6,8 @@ import com.vuhlog.identity.dto.response.UserResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.util.List;
+
 public interface UserService {
     public Page<UserResponse> getUsers(Pageable pageable);
 
@@ -13,6 +15,8 @@ public interface UserService {
     public UserResponse getById(String id);
 
     public UserResponse getByUsername(String username);
+
+    public List<UserResponse> getByUsernameContaining(String username);
 
     public UserResponse addUser(UserCreationRequest request);
 

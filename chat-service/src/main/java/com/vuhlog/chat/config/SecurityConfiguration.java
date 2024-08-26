@@ -23,7 +23,7 @@ import org.springframework.web.client.RestTemplate;
 public class SecurityConfiguration {
 
     private final String[] PUBLIC_ENDPOINTS =
-            {};
+            {"/conversations"};
 
     @Autowired
     @Lazy

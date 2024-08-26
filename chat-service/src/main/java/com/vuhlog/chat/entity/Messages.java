@@ -1,5 +1,6 @@
 package com.vuhlog.chat.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -36,8 +37,9 @@ public class Messages {
     @Column
     private String status;
 
-    @ManyToOne
+    @ManyToOne(cascade = CascadeType.MERGE)
     @JoinColumn(name = "conversation_id")
+    @JsonBackReference
     private Conversations conversation;
 
     @OneToMany(mappedBy = "message")

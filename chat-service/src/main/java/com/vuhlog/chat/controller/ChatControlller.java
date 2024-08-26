@@ -1,6 +1,7 @@
 package com.vuhlog.chat.controller;
 
 import com.vuhlog.chat.dto.Request.MessagesRequest;
+import com.vuhlog.chat.dto.Request.MessagesWSRequest;
 import com.vuhlog.chat.service.MessagesService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -17,10 +18,10 @@ public class ChatControlller {
     private MessagesService messagesService;
 
     @MessageMapping("/sendMessage")
-    public void sendMessage(@Payload MessagesRequest request) throws Exception {
+    public void sendMessage(@Payload MessagesWSRequest request) throws Exception {
         String conversationId = request.getConversationId();
         String destination = "/topic/conversations/" + conversationId;
-        messagingTemplate.convertAndSend(destination, messagesService.sendMessage(request,conversationId));
+        messagingTemplate.convertAndSend(destination, messagesService.MessageResponseWS(request.getMessagesId()));
     }
 
 }
