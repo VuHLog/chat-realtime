@@ -5,12 +5,12 @@ import {
   ref,
   watch,
   getCurrentInstance,
-  computed
+  computed,
 } from "vue";
 import { Client } from "@stomp/stompjs";
 import { useRoute } from "vue-router";
 import { useBaseStore } from "@/store/index.js";
-import TokenService from "@/service/TokenService.js";
+import FriendRequestsStatus from "@/constants/FriendRequestsStatus.js";
 import Header from "./Header.vue";
 
 const store = useBaseStore();
@@ -72,7 +72,6 @@ function handleScroll() {
 
   console.log("scrollTop");
   if (bodyRef.value.scrollTop === 0) {
-
     // pageNumber.value++;
     // handleLoadMessages();
   }
@@ -93,6 +92,7 @@ async function handleLoadConversation() {
       return value.userId !== myInfo.value.id;
     }).userId;
     receiver.value = await store.getUserById(receiverId);
+    getRelationship();
   }
 }
 
@@ -195,11 +195,56 @@ async function sendMessage() {
   messageText.value = "";
 }
 //#endregion
+
+//xu ly friend
+//#region
+const friendRequests = ref({});
+async function getRelationship() {
+  await proxy.$api
+    .get("/friend/requests/" + receiver.value.id)
+    .then((res) => {
+      friendRequests.value = res.result;
+    })
+    .catch((error) => {
+      let response = error.response.data;
+      if (response.code === 1013) {
+        friendRequests.value.status = response.message;
+      }
+    });
+}
+
+async function addFriendRequest(receiverId) {
+  await proxy.$api
+    .post("/friend/requests", {
+      receiverId,
+    })
+    .then((res) => {
+      friendRequests.value = res.result;
+    })
+    .catch((error) => {
+      console.log(error);
+    });
+}
+async function cancelFriendRequest() {
+  await proxy.$api
+    .put("/friend/requests/cancel", {
+      id: friendRequests.value.friendRequestId,
+    })
+    .then((res) => {
+      friendRequests.value = res.result;
+    })
+    .catch((error) => {
+      console.log(error);
+    });
+}
+
+//#endregion
 </script>
 
 <template>
-  <div class="h-100 position-relative d-flex flex-column"
-  @scroll="handleScroll()"
+  <div
+    class="h-100 position-relative d-flex flex-column"
+    @scroll="handleScroll()"
   >
     <Header
       ref="headerRef"
@@ -222,11 +267,26 @@ async function sendMessage() {
         </v-tooltip>
       </div>
       <div class="ml-2 font-weight-bold">{{ receiver?.fullName }}</div>
-      <div class="text-deep-purple-accent-3 cursor-pointer">
-        <font-awesome-icon :icon="['fas', 'user-plus']" />
-        <v-tooltip activator="parent" location="bottom">
-          <span class="text-12">Thêm bạn bè</span>
-        </v-tooltip>
+      <div
+        v-if="
+          friendRequests?.status === FriendRequestsStatus.FRIEND_REQUEST_NOT_EXISTED || friendRequests?.status === FriendRequestsStatus.CANCELLED
+        "
+        class="d-flex bg-deep-purple-accent-3 py-1 px-2 mt-1 cursor-pointer rounded-xl"
+        @click="addFriendRequest(receiver?.id)"
+      >
+        <div><font-awesome-icon :icon="['fas', 'user-plus']" /></div>
+        <span class="ml-2">Thêm bạn bè</span>
+      </div>
+      <div
+        v-else-if="friendRequests?.status === FriendRequestsStatus.PENDING"
+        class="d-flex bg-deep-purple-accent-3 py-1 px-2 mt-1 cursor-pointer rounded-xl"
+        @click="cancelFriendRequest()"
+      >
+        <div><font-awesome-icon :icon="['fas', 'user-plus']" /></div>
+        <span class="ml-2">Hủy lời mời</span>
+      </div>
+      <div v-if="friendRequests?.status === FriendRequestsStatus.ACCEPTED">
+        <span class="text-12">Bạn bè</span>
       </div>
     </div>
 
@@ -254,7 +314,7 @@ async function sendMessage() {
               >
                 <img
                   class="width-avatar-chat height-avatar-chat rounded-circle object-cover object-center"
-                  src="https://res.cloudinary.com/cloud1412/image/upload/v1724172738/avatar_cv_fj5vuf.jpg"
+                  :src="receiver?.avatarUrl"
                   alt=""
                 />
               </div>

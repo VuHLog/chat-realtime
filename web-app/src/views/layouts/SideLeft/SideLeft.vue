@@ -147,7 +147,6 @@ function backChat() {
 async function chatWith(userId) {
   let type = 1;
   let membersId = Array.of(userId);
-  console.log(membersId);
 
   await proxy.$api
     .post("/chat/conversations", {
