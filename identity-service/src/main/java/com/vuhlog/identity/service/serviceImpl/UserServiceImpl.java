@@ -24,6 +24,7 @@ import org.springframework.stereotype.Service;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -56,15 +57,14 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public List<UserResponse> getByUsernameContaining(String username) {
-        List<Users> users = usersRepository.findByUsernameContainingIgnoreCase(username);
+    public Page<UserResponse> getByUsernameContaining(String username, Pageable pageable) {
 
         // loai bo ket qua trung voi my username
         String myUsername = SecurityContextHolder.getContext().getAuthentication().getName();
-        users = users.stream().filter(user -> !myUsername.equals(user.getUsername())).toList();
+        Page<Users> users = usersRepository.findByUsernameContainingIgnoreCaseAndUsernameNot(username, myUsername,pageable);
 
         if(users.isEmpty()) throw new AppException(ErrorCode.USER_NOT_EXISTED);
-        return users.stream().map(userMapper::toUserResponse).toList();
+        return users.map(userMapper::toUserResponse);
     }
 
     @Override

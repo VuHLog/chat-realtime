@@ -23,11 +23,11 @@ public class UserController {
     private UserService userService;
 
     @PostMapping("/registration")
-    public ApiResponse<UserResponse> createUser(@RequestBody UserCreationRequest request){
+    public ApiResponse<UserResponse> createUser(@RequestBody UserCreationRequest request) {
 
         return ApiResponse.<UserResponse>builder()
                 .result(userService.addUser(request))
-        .build();
+                .build();
     }
 
     @GetMapping("")
@@ -37,7 +37,7 @@ public class UserController {
             @RequestParam(name = "pageSize", required = false, defaultValue = "5") Integer pageSize,
             @RequestParam(name = "sort", required = false, defaultValue = "ASC") String sort,
             @RequestParam(name = "search", required = false, defaultValue = "") String search
-    ){
+    ) {
 
 //        var authentication = SecurityContextHolder.getContext().getAuthentication();
 //
@@ -45,58 +45,65 @@ public class UserController {
 //        authentication.getAuthorities().forEach(grantedAuthority -> log.info(grantedAuthority.getAuthority()));
 
         Sort sortable = null;
-        if(sort.toUpperCase().equals("ASC")){
+        if (sort.toUpperCase().equals("ASC")) {
             sortable = Sort.by(field).ascending();
         }
-        if(sort.toUpperCase().equals("DESC")){
+        if (sort.toUpperCase().equals("DESC")) {
             sortable = Sort.by(field).descending();
         }
 
-        Pageable pageable = PageRequest.of(pageNumber,pageSize,sortable);
+        Pageable pageable = PageRequest.of(pageNumber, pageSize, sortable);
         Page<UserResponse> users = null;
-        if(!search.trim().equals("")){
-            users = userService.getUsersContains(search,pageable);
-        }else users = userService.getUsers(pageable);
+        if (!search.trim().equals("")) {
+            users = userService.getUsersContains(search, pageable);
+        } else users = userService.getUsers(pageable);
         return users;
     }
 
     @GetMapping("/{userId}")
-    public ApiResponse<UserResponse> getUser(@PathVariable String userId){
+    public ApiResponse<UserResponse> getUser(@PathVariable String userId) {
         return ApiResponse.<UserResponse>builder()
                 .result(userService.getById(userId))
                 .build();
     }
 
     @GetMapping("/username/{username}")
-    public ApiResponse<UserResponse> getUserByUsername(@PathVariable String username){
+    public ApiResponse<UserResponse> getUserByUsername(@PathVariable String username) {
         return ApiResponse.<UserResponse>builder()
                 .result(userService.getByUsername(username))
                 .build();
     }
 
     @GetMapping("/username")
-    public ApiResponse<List<UserResponse>> getUserByUsernamesContaining(@RequestParam String username){
-        return ApiResponse.<List<UserResponse>>builder()
-                .result(userService.getByUsernameContaining(username))
-                .build();
+    public Page<UserResponse> getUserByUsernamesContaining(
+            @RequestParam String username,
+            @RequestParam(name = "field", required = false, defaultValue = "fullName") String field,
+            @RequestParam(name = "pageNumber", required = false, defaultValue = "0") Integer pageNumber,
+            @RequestParam(name = "pageSize", required = false, defaultValue = "10") Integer pageSize,
+            @RequestParam(name = "sort", required = false, defaultValue = "ASC") String sort,
+            @RequestParam(name = "search", required = false, defaultValue = "") String search
+    ) {
+        Sort sortable = Sort.by(field).ascending();
+        Pageable pageable = PageRequest.of(pageNumber, pageSize, sortable);
+        return userService.getByUsernameContaining(username, pageable);
     }
 
     @GetMapping("/myInfo")
-    ApiResponse<UserResponse> getMyInfo(){
+    ApiResponse<UserResponse> getMyInfo() {
         return ApiResponse.<UserResponse>builder()
                 .result(userService.getMyInfo())
                 .build();
     }
 
     @PutMapping("/{userId}")
-    public ApiResponse<UserResponse> updateUser(@PathVariable String userId,@RequestBody UserUpdateRequest request){
+    public ApiResponse<UserResponse> updateUser(@PathVariable String userId, @RequestBody UserUpdateRequest request) {
         return ApiResponse.<UserResponse>builder()
-                .result(userService.updateUser(userId,request))
+                .result(userService.updateUser(userId, request))
                 .build();
     }
 
     @RequestMapping(value = "/{userId}", method = RequestMethod.DELETE)
-    public ApiResponse<String> deleteUser(@PathVariable String userId){
+    public ApiResponse<String> deleteUser(@PathVariable String userId) {
         userService.deleteUser(userId);
         return ApiResponse.<String>builder()
                 .result("User has been deleted")

@@ -17,7 +17,7 @@ public interface UsersRepository extends JpaRepository<Users, String> {
 
     Optional<Users> findByUsername(String username);
 
-    List<Users> findByUsernameContainingIgnoreCase(String username);
+    Page<Users> findByUsernameContainingIgnoreCaseAndUsernameNot(String username, String myUserName, Pageable pageable);
 
     Page<Users> findByUsernameContainsIgnoreCase(String username, Pageable pageable);
 

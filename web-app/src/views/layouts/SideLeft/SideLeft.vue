@@ -93,6 +93,9 @@ const isUserExisted = ref(true);
 
 //handle khi search text thay doi
 watch(searchText, (newVal) => {
+  totalSearchResults.value = 0;
+  pageSizeSR.value = 1;
+  pageNumberSR.value = 1;
   if (newVal !== "") {
     showBackChat.value = true;
     loadSearchResults(newVal);
@@ -102,12 +105,23 @@ watch(searchText, (newVal) => {
 });
 
 // load ket qua tim kiem
+const totalSearchResults = ref(0);
+const pageSizeSR = ref(10);
+const pageNumberSR = ref(1);
 async function loadSearchResults(username) {
   await proxy.$api
-    .get("/identity/users/username?username=" + username)
+    .get(
+      "/identity/users/username?username=" +
+        username +
+        "&pageNumber=" +
+        (pageNumberSR.value - 1) +
+        "&pageSize=" +
+        pageSizeSR.value
+    )
     .then((res) => {
       isUserExisted.value = true;
-      searchResults.value = res.result;
+      searchResults.value = res.content;
+      totalSearchResults.value = res.totalElements;
     })
     .catch((error) => {
       let data = error.response.data;
@@ -115,6 +129,12 @@ async function loadSearchResults(username) {
         isUserExisted.value = false;
       }
     });
+}
+
+async function clickMoreSearchResults() {
+  if (searchResults.value.length >= totalSearchResults.value) return;
+  pageSizeSR.value += 10 * pageSizeSR.value;
+  await loadSearchResults(searchText.value);
 }
 
 //handle button back when search
@@ -128,7 +148,7 @@ async function chatWith(userId) {
   let type = 1;
   let membersId = Array.of(userId);
   console.log(membersId);
-  
+
   await proxy.$api
     .post("/chat/conversations", {
       type: type,
@@ -200,6 +220,16 @@ async function chatWith(userId) {
               </div>
             </div>
           </template>
+          <div
+            class="text-center"
+            v-if="totalSearchResults > searchResults.length"
+          >
+            <span
+              class="cursor-pointer text-decoration-underline text-light-blue-accent-3 text-14"
+              @click="clickMoreSearchResults()"
+              >Xem thêm</span
+            >
+          </div>
         </div>
         <div class="text-center" v-else>
           Không tìm thấy kết quả cho {{ searchText }}
@@ -214,17 +244,31 @@ async function chatWith(userId) {
           <div
             class="d-flex align-center px-1 py-2 cursor-pointer chat-box rounded user-select-none position-relative"
             :class="conversation?.id === conversationId ? 'active' : ''"
-            @click="chatWith(conversation.type===1?conversation?.receivers?.id:'')"
+            @click="
+              chatWith(
+                conversation.type === 1 ? conversation?.receivers?.id : ''
+              )
+            "
           >
             <div class="d-flex align-center">
               <img
                 class="width-avatar height-avatar rounded-circle object-cover object-center"
-                :src="conversation.type===1?conversation?.receivers?.avatarUrl:''"
+                :src="
+                  conversation.type === 1
+                    ? conversation?.receivers?.avatarUrl
+                    : ''
+                "
                 alt=""
               />
             </div>
             <div class="d-flex flex-column ml-2 justify-center">
-              <div class="text-14 font-weight-bold">{{ conversation.type===1?conversation?.receivers?.fullName:'' }}</div>
+              <div class="text-14 font-weight-bold">
+                {{
+                  conversation.type === 1
+                    ? conversation?.receivers?.fullName
+                    : ""
+                }}
+              </div>
               <div class="text-12 text-grey-darken-1">
                 <span>{{
                   `${
