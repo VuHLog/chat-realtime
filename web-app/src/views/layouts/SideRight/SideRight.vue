@@ -5,6 +5,7 @@ import {
   ref,
   watch,
   getCurrentInstance,
+  computed
 } from "vue";
 import { Client } from "@stomp/stompjs";
 import { useRoute } from "vue-router";
@@ -22,18 +23,26 @@ const conversationId = ref(route.params.conversationId);
 const headerRef = ref(null);
 const footerRef = ref(null);
 const bodyRef = ref(null);
+const bodyHeight = ref(null);
+
+//pagination
+const totalElements = ref(0);
+const pageSize = ref(10);
+const pageNumber = ref(1);
 
 const myInfo = ref();
 const conversation = ref();
-const receiver = ref();
+const receiver = ref({});
+const messageText = ref("");
+const messages = ref([]);
+
 onMounted(async () => {
-  bodyRef.value.style.height = `calc(100vh - ${
-    headerRef.value.offsetHeight + footerRef.value.offsetHeight
-  }px)`;
+  await connect();
+
+  calcBodyHeight();
 
   myInfo.value = await store.getMyInfo();
   await loadData();
-  await connect();
 });
 
 // load lại data trong component khi path thay đổi
@@ -41,11 +50,35 @@ watch(
   () => route.params.conversationId,
   (newVal) => {
     conversationId.value = newVal;
+    totalElements.value = 0;
+    pageSize.value = 10;
+    pageNumber.value = 1;
+    calcBodyHeight();
     loadData();
   }
 );
 
-async function loadData() {
+//tinh body height
+function calcBodyHeight() {
+  bodyHeight.value = `calc(100vh - ${
+    headerRef.value.offsetHeight + footerRef.value.offsetHeight
+  }px)`;
+  bodyRef.value.style.height = bodyHeight.value;
+}
+
+//xu ly khi scroll
+function handleScroll() {
+  if (messages.value.length >= totalElements.value) return;
+
+  console.log("scrollTop");
+  if (bodyRef.value.scrollTop === 0) {
+
+    // pageNumber.value++;
+    // handleLoadMessages();
+  }
+}
+
+async function handleLoadConversation() {
   await proxy.$api
     .get("/chat/conversations/" + conversationId.value)
     .then((res) => {
@@ -63,14 +96,34 @@ async function loadData() {
   }
 }
 
-//#region
+async function handleLoadMessages() {
+  await proxy.$api
+    .get(
+      "/chat/messages/conversation?conversationId=" +
+        conversationId.value +
+        "&pageNumber=" +
+        (pageNumber.value - 1) +
+        "&pageSize=" +
+        pageSize.value
+    )
+    .then((res) => {
+      messages.value = res.content;
+      totalElements.value = res.totalElements;
+    })
+    .catch((error) => console.log(error));
+}
+
+async function loadData() {
+  await handleLoadConversation();
+  await handleLoadMessages();
+}
+
 //xu ly real time voi stomp client
+//#region
 onBeforeUnmount(() => {
   disconnect();
 });
 
-const messageText = ref("");
-const messages = ref([]);
 const showSentIcon = ref(false);
 watch(messageText, (newVal) => {
   if (newVal !== "") {
@@ -135,9 +188,9 @@ async function sendMessage() {
   stompClient.publish({
     destination: "/app/sendMessage",
     body: JSON.stringify({
-    conversationId: messageRequest.conversationId,
-    messagesId: messageId,
-  }),
+      conversationId: messageRequest.conversationId,
+      messagesId: messageId,
+    }),
   });
   messageText.value = "";
 }
@@ -145,7 +198,9 @@ async function sendMessage() {
 </script>
 
 <template>
-  <div class="h-100 position-relative d-flex flex-column">
+  <div class="h-100 position-relative d-flex flex-column"
+  @scroll="handleScroll()"
+  >
     <Header
       ref="headerRef"
       :receiver="receiver"
@@ -175,9 +230,11 @@ async function sendMessage() {
       </div>
     </div>
 
+    <!-- BODY -->
     <div
       ref="bodyRef"
       class="flex-grow-1 d-flex flex-column-reverse overflow-y-auto"
+      :style="{ maxHeight: bodyHeight }"
     >
       <template v-for="message in messages" :key="message.id">
         <div>
@@ -203,7 +260,11 @@ async function sendMessage() {
               </div>
               <p
                 class="text-wrap w-100 rounded-xl text-14 px-3 py-2 ml-2"
-                :class="message.senderId === myInfo.id ? 'bg-purple-accent-4':'bg-grey-lighten-3'"
+                :class="
+                  message.senderId === myInfo.id
+                    ? 'bg-purple-accent-4'
+                    : 'bg-grey-lighten-3'
+                "
               >
                 {{ message.content }}
               </p>
@@ -212,6 +273,8 @@ async function sendMessage() {
         </div>
       </template>
     </div>
+    <!-- END BODY -->
+
     <footer ref="footerRef" class="footer d-flex py-3 align-center">
       <div class="text-purple-accent-4 pa-2 ma-1 cursor-pointer">
         <font-awesome-icon :icon="['far', 'file']" />

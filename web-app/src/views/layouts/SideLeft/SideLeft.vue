@@ -1,9 +1,88 @@
 <script setup>
-import { ref, getCurrentInstance, watch } from "vue";
+import { ref, getCurrentInstance, watch, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import { useBaseStore } from "@/store";
 
 const { proxy } = getCurrentInstance();
+const store = useBaseStore();
 const router = useRouter();
+const route = useRoute();
+
+const conversationId = ref(route.params.conversationId);
+const myUserId = ref("");
+
+onMounted(async () => {
+  await store.getMyUserId().then((res) => {
+    myUserId.value = res;
+  });
+  await handleLoadMyConversation();
+});
+
+// load lại data trong component khi path thay đổi
+watch(
+  () => route.params.conversationId,
+  (newVal) => {
+    conversationId.value = newVal;
+    totalElements.value = 0;
+    pageSize.value = 10;
+    pageNumber.value = 1;
+  }
+);
+
+//pagination
+const totalElements = ref(0);
+const pageSize = ref(10);
+const pageNumber = ref(1);
+
+async function loadData() {
+  await handleLoadMyConversation();
+}
+
+const myConversations = ref([]);
+async function handleLoadMyConversation() {
+  await proxy.$api
+    .get(
+      "/chat/conversations?" +
+        "pageNumber=" +
+        (pageNumber.value - 1) +
+        "&pageSize=" +
+        pageSize.value
+    )
+    .then((res) => {
+      totalElements.value = res.totalElements;
+      myConversations.value = res.content;
+
+      // lay ra last message
+      myConversations.value.forEach(async (value) => {
+        if (!value.lastMessage) {
+          await loadLastMessage(value.lastMessageId).then((res) => {
+            value.lastMessage = res;
+          });
+        }
+
+        if (value.groupMembers.length === 2) {
+          value.groupMembers.forEach(async (member) => {
+            if (member.userId !== myUserId.value) {
+              value.receivers = await store.getUserById(member.userId);
+            }
+          });
+        }
+      });
+    })
+    .catch((error) => console.log(error));
+}
+
+//load last message
+async function loadLastMessage(messageId) {
+  let message = {};
+  await proxy.$api
+    .get("/chat/messages/" + messageId)
+    .then((res) => {
+      message = res.result;
+    })
+    .catch((error) => console.log(error));
+  return message;
+}
 
 //#region
 //handle search
@@ -12,6 +91,7 @@ const showBackChat = ref(false);
 const searchResults = ref([]);
 const isUserExisted = ref(true);
 
+//handle khi search text thay doi
 watch(searchText, (newVal) => {
   if (newVal !== "") {
     showBackChat.value = true;
@@ -21,6 +101,7 @@ watch(searchText, (newVal) => {
   }
 });
 
+// load ket qua tim kiem
 async function loadSearchResults(username) {
   await proxy.$api
     .get("/identity/users/username?username=" + username)
@@ -36,6 +117,7 @@ async function loadSearchResults(username) {
     });
 }
 
+//handle button back when search
 function backChat() {
   showBackChat.value = false;
   searchText.value = "";
@@ -45,9 +127,11 @@ function backChat() {
 async function chatWith(userId) {
   let type = 1;
   let membersId = Array.of(userId);
+  console.log(membersId);
+  
   await proxy.$api
     .post("/chat/conversations", {
-      type: 1,
+      type: type,
       membersId: membersId,
     })
     .then((res) => {
@@ -123,53 +207,42 @@ async function chatWith(userId) {
       </div>
       <!-- CHAT LIST -->
       <div class="mt-2 h-100 overflow-y-auto" v-if="!showBackChat">
-        <div
-          class="d-flex align-center px-1 py-2 cursor-pointer chat-box rounded user-select-none position-relative active"
+        <template
+          v-for="conversation in myConversations"
+          :key="conversation.id"
         >
-          <div class="d-flex align-center">
-            <img
-              class="width-avatar height-avatar rounded-circle object-cover object-center"
-              src="https://res.cloudinary.com/cloud1412/image/upload/v1724172738/avatar_cv_fj5vuf.jpg"
-              alt=""
-            />
-          </div>
-          <div class="d-flex flex-column ml-2 justify-center">
-            <div class="text-14 font-weight-bold">Long Hoàng</div>
-            <div class="text-12 text-grey-darken-1">
-              <span>Long đã gửi một nhãn dán</span>
-              <span class="ml-2">3 giờ</span>
+          <div
+            class="d-flex align-center px-1 py-2 cursor-pointer chat-box rounded user-select-none position-relative"
+            :class="conversation?.id === conversationId ? 'active' : ''"
+            @click="chatWith(conversation.type===1?conversation?.receivers?.id:'')"
+          >
+            <div class="d-flex align-center">
+              <img
+                class="width-avatar height-avatar rounded-circle object-cover object-center"
+                :src="conversation.type===1?conversation?.receivers?.avatarUrl:''"
+                alt=""
+              />
+            </div>
+            <div class="d-flex flex-column ml-2 justify-center">
+              <div class="text-14 font-weight-bold">{{ conversation.type===1?conversation?.receivers?.fullName:'' }}</div>
+              <div class="text-12 text-grey-darken-1">
+                <span>{{
+                  `${
+                    conversation?.lastMessage?.senderId === myUserId
+                      ? "Bạn: "
+                      : ""
+                  }${conversation.lastMessage?.content}`
+                }}</span>
+                <span class="ml-2">3 giờ</span>
+              </div>
+            </div>
+            <div
+              class="position-absolute rounded-circle bg-white chat-box__options d-none align-center justify-center"
+            >
+              <font-awesome-icon :icon="['fas', 'ellipsis']" />
             </div>
           </div>
-          <div
-            class="position-absolute rounded-circle bg-white chat-box__options d-none align-center justify-center"
-          >
-            <font-awesome-icon :icon="['fas', 'ellipsis']" />
-          </div>
-        </div>
-        <div
-          class="d-flex align-center px-1 py-2 cursor-pointer chat-box rounded user-select-none position-relative"
-          @click="chatWith(3)"
-        >
-          <div class="d-flex align-center">
-            <img
-              class="width-avatar height-avatar rounded-circle object-cover object-center"
-              src="https://res.cloudinary.com/cloud1412/image/upload/v1724172738/avatar_cv_fj5vuf.jpg"
-              alt=""
-            />
-          </div>
-          <div class="d-flex flex-column ml-2 justify-center">
-            <div class="text-14 font-weight-bold">Long Hoàng</div>
-            <div class="text-12 text-grey-darken-1">
-              <span>hello</span>
-              <span class="ml-2">3 giờ</span>
-            </div>
-          </div>
-          <div
-            class="position-absolute rounded-circle bg-white chat-box__options d-none align-center justify-center"
-          >
-            <font-awesome-icon :icon="['fas', 'ellipsis']" />
-          </div>
-        </div>
+        </template>
       </div>
     </div>
   </div>

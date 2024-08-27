@@ -10,6 +10,8 @@ import com.vuhlog.chat.repository.GroupMemberRepository;
 import com.vuhlog.chat.repository.httpClients.IdentityClient;
 import com.vuhlog.chat.service.ConversationsService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
@@ -63,6 +65,14 @@ public class ConversationsServiceImpl implements ConversationsService {
     public ConversationsResponse getConversationById(String conversationId) {
         Conversations conversation = conversationsRepository.findById(conversationId).get();
         return conversationsMapper.toConversationsResponse(conversation);
+    }
+
+    @Override
+    public Page<ConversationsResponse> getMyConversations(Pageable pageable) {
+        String usernameCreator = SecurityContextHolder.getContext().getAuthentication().getName();
+        String userId = identityClient.getUserByUsername(usernameCreator).getResult().getId();
+
+        return conversationsRepository.findByGroupMembers_UserId(userId, pageable).map(conversationsMapper::toConversationsResponse);
     }
 
     @Override

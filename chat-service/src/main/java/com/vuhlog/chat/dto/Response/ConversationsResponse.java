@@ -28,7 +28,5 @@ public class ConversationsResponse {
 
     private String lastMessageId;
 
-    private Set<Messages> messages;
-
     private Set<GroupMember> groupMembers;
 }

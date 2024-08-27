@@ -34,6 +34,13 @@ export const useBaseStore = defineStore("base", {
       )
       return response;
     },
+    async getMyUserId(){
+      let response = null;
+      await this.getMyInfo().then((res) => {
+        response = res;
+      });
+      return response.id;
+    },
     async getUserById(userId){
       let response = null;
       await base.get("/identity/users/"+ userId).then((res) => {

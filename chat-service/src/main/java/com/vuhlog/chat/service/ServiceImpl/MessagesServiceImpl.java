@@ -10,6 +10,8 @@ import com.vuhlog.chat.repository.MessagesRepository;
 import com.vuhlog.chat.repository.httpClients.IdentityClient;
 import com.vuhlog.chat.service.MessagesService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
@@ -51,6 +53,12 @@ public class MessagesServiceImpl implements MessagesService {
     public MessagesResponse getMessageById(String messageId) {
         Messages message = messagesRepository.findById(messageId).get();
         return messagesMapper.toMessagesResponse(message);
+    }
+
+    @Override
+    public Page<MessagesResponse> getMessagesByConversationIdOrderByTimeSentDesc(String conversationId, Pageable pageable) {
+        return messagesRepository.findByConversation_IdOrderByTimeSentDesc(conversationId, pageable)
+                .map(messagesMapper::toMessagesResponse);
     }
 
     @Override
