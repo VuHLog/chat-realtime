@@ -2,6 +2,7 @@ package com.vuhlog.friend.service;
 
 import com.vuhlog.friend.dto.request.FriendRequestUpdate;
 import com.vuhlog.friend.dto.request.FriendRequestsDTO;
+import com.vuhlog.friend.dto.response.FriendRequestsResponse;
 import com.vuhlog.friend.dto.response.FriendsStatusResponse;
 
 public interface FriendService {
@@ -9,11 +10,9 @@ public interface FriendService {
 
     FriendsStatusResponse acceptFriendRequest(FriendRequestUpdate friendRequests);
 
-    FriendsStatusResponse rejectFriendRequest(FriendRequestUpdate friendRequests);
-
-    FriendsStatusResponse cancelFriendRequest(FriendRequestUpdate friendRequests);
+    void deleteFriendRequest(String friendRequestId);
 
     Boolean existsByUserIdAndFriendId(String friendId);
 
-    FriendsStatusResponse findBySenderIdAndReceiverId(String receiverId);
+    FriendRequestsResponse findBySenderIdAndReceiverId(String receiverId);
 }

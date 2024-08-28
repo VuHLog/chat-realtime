@@ -3,11 +3,13 @@ package com.vuhlog.friend.service.serviceImpl;
 import com.vuhlog.friend.constants.FriendRequestsStatus;
 import com.vuhlog.friend.dto.request.FriendRequestUpdate;
 import com.vuhlog.friend.dto.request.FriendRequestsDTO;
+import com.vuhlog.friend.dto.response.FriendRequestsResponse;
 import com.vuhlog.friend.dto.response.FriendsStatusResponse;
 import com.vuhlog.friend.entity.FriendRequests;
 import com.vuhlog.friend.entity.Friends;
 import com.vuhlog.friend.exception.AppException;
 import com.vuhlog.friend.exception.ErrorCode;
+import com.vuhlog.friend.mapper.FriendRequestsMapper;
 import com.vuhlog.friend.repository.FriendRequestsRepository;
 import com.vuhlog.friend.repository.FriendsRepository;
 import com.vuhlog.friend.repository.httpClients.IdentityClient;
@@ -32,11 +34,19 @@ public class FriendServiceImpl implements FriendService {
     @Autowired
     private IdentityClient identityClient;
 
+    @Autowired
+    private FriendRequestsMapper friendRequestsMapper;
+
     @Override
     public FriendsStatusResponse addFriendRequest(FriendRequestsDTO request) {
+        //request da duoc gui
+        if (!friendRequestExisted(request.getReceiverId()).isEmpty())
+            throw new AppException(ErrorCode.FRIEND_REQUEST_EXISTED);
+
         String userId = getUserId();
         if (existsByUserIdAndFriendId(request.getReceiverId())
         ) throw new AppException(ErrorCode.FRIEND_EXISTED);
+
 
         FriendRequests friendRequest = FriendRequests.builder()
                 .senderId(userId)
@@ -82,41 +92,14 @@ public class FriendServiceImpl implements FriendService {
     }
 
     @Override
-    public FriendsStatusResponse rejectFriendRequest(FriendRequestUpdate request) {
+    public void deleteFriendRequest(String friendRequestId) {
         //chua ton tai loi moi ket ban
-        Optional<FriendRequests> optionalFriendRequests = friendRequestsRepository.findById(request.getId());
+        Optional<FriendRequests> optionalFriendRequests = friendRequestsRepository.findById(friendRequestId);
         if (
                 optionalFriendRequests.isEmpty()
         ) throw new AppException(ErrorCode.FRIEND_REQUEST_NOT_EXISTED);
 
-        FriendRequests friendRequest = optionalFriendRequests.get();
-        friendRequest.setStatus(FriendRequestsStatus.REJECTED.getStatus());
-        friendRequestsRepository.save(friendRequest);
-
-        return FriendsStatusResponse.builder()
-                .friendRequestId(friendRequest.getId())
-                .status(FriendRequestsStatus.REJECTED.getStatus())
-                .isFriend(false)
-                .build();
-    }
-
-    @Override
-    public FriendsStatusResponse cancelFriendRequest(FriendRequestUpdate request) {
-        //chua ton tai loi moi ket ban
-        Optional<FriendRequests> optionalFriendRequests = friendRequestsRepository.findById(request.getId());
-        if (
-                optionalFriendRequests.isEmpty()
-        ) throw new AppException(ErrorCode.FRIEND_REQUEST_NOT_EXISTED);
-
-        FriendRequests friendRequest = optionalFriendRequests.get();
-        friendRequest.setStatus(FriendRequestsStatus.CANCELLED.getStatus());
-        friendRequestsRepository.save(friendRequest);
-
-        return FriendsStatusResponse.builder()
-                .friendRequestId(friendRequest.getId())
-                .status(FriendRequestsStatus.CANCELLED.getStatus())
-                .isFriend(false)
-                .build();
+        friendRequestsRepository.deleteById(friendRequestId);
     }
 
     @Override
@@ -126,20 +109,23 @@ public class FriendServiceImpl implements FriendService {
     }
 
     @Override
-    public FriendsStatusResponse findBySenderIdAndReceiverId(String receiverId) {
-        String senderId = getUserId();
-        Optional<FriendRequests> OptionalFriendRequests = friendRequestsRepository.findTop1BySenderIdAndReceiverIdOrderByUpdatedAtDesc(senderId, receiverId);
-        if (OptionalFriendRequests.isEmpty()) throw new AppException(ErrorCode.FRIEND_REQUEST_NOT_EXISTED);
-        FriendRequests friendRequest = OptionalFriendRequests.get();
-        return FriendsStatusResponse.builder()
-                .friendRequestId(friendRequest.getId())
-                .status(friendRequest.getStatus())
-                .isFriend(friendRequest.getStatus().equals(FriendRequestsStatus.ACCEPTED.getStatus()))
-                .build();
+    public FriendRequestsResponse findBySenderIdAndReceiverId(String receiverId) {
+        FriendRequests friendRequest = friendRequestExisted(receiverId).orElseThrow(() -> new AppException(ErrorCode.FRIEND_REQUEST_NOT_EXISTED));
+        return friendRequestsMapper.toFriendRequestResponse(friendRequest);
     }
 
-    public String getUserId(){
-        String username= SecurityContextHolder.getContext().getAuthentication().getName();
+    public Optional<FriendRequests> friendRequestExisted(String receiverId) {
+        String senderId = getUserId();
+        Optional<FriendRequests> OptionalFriendRequests = friendRequestsRepository.findTop1BySenderIdAndReceiverIdOrderByUpdatedAtDesc(senderId, receiverId);
+        if (OptionalFriendRequests.isEmpty()) {
+            OptionalFriendRequests = friendRequestsRepository.findTop1BySenderIdAndReceiverIdOrderByUpdatedAtDesc(receiverId, senderId);
+        }
+
+        return OptionalFriendRequests;
+    }
+
+    public String getUserId() {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
         return identityClient.getUserByUsername(username).getResult().getId();
     }
 }

@@ -3,6 +3,7 @@ package com.vuhlog.friend.controller;
 import com.vuhlog.friend.dto.ApiResponse;
 import com.vuhlog.friend.dto.request.FriendRequestUpdate;
 import com.vuhlog.friend.dto.request.FriendRequestsDTO;
+import com.vuhlog.friend.dto.response.FriendRequestsResponse;
 import com.vuhlog.friend.dto.response.FriendsStatusResponse;
 import com.vuhlog.friend.service.FriendService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,8 +16,8 @@ public class FriendsController {
     private FriendService friendService;
 
     @GetMapping("/{receiverId}")
-    public ApiResponse<FriendsStatusResponse> getRequestBySenderIdAndReceiverId(@PathVariable String receiverId){
-        return ApiResponse.<FriendsStatusResponse>builder()
+    public ApiResponse<FriendRequestsResponse> getRequestBySenderIdAndReceiverId(@PathVariable String receiverId){
+        return ApiResponse.<FriendRequestsResponse>builder()
                 .result(friendService.findBySenderIdAndReceiverId(receiverId))
                 .build();
     }
@@ -35,10 +36,9 @@ public class FriendsController {
                 .build();
     }
 
-    @PutMapping("/cancel")
-    public ApiResponse<FriendsStatusResponse> cancelFriendRequest(@RequestBody FriendRequestUpdate request){
-        return ApiResponse.<FriendsStatusResponse>builder()
-                .result(friendService.cancelFriendRequest(request))
-                .build();
+    @DeleteMapping("/{friendRequestId}")
+    public ApiResponse<Void> cancelFriendRequest(@PathVariable String friendRequestId){
+        friendService.deleteFriendRequest(friendRequestId);
+        return ApiResponse.<Void>builder().build();
     }
 }

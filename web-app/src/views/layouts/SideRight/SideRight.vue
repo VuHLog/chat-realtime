@@ -84,7 +84,7 @@ async function handleLoadConversation() {
       conversation.value = res.result;
     })
     .catch((error) => {
-      console.log(error);
+      console.log(error.response.data.message);
     });
   let conversationVal = conversation.value;
   if (conversationVal.type === 1) {
@@ -110,7 +110,7 @@ async function handleLoadMessages() {
       messages.value = res.content;
       totalElements.value = res.totalElements;
     })
-    .catch((error) => console.log(error));
+    .catch((error) => console.log(error.response.data.message));
 }
 
 async function loadData() {
@@ -182,7 +182,7 @@ async function sendMessage() {
       messageId = res.result.id;
     })
     .catch((error) => {
-      console.log(error);
+      console.log(error.response.data.message);
     });
 
   stompClient.publish({
@@ -222,19 +222,32 @@ async function addFriendRequest(receiverId) {
       friendRequests.value = res.result;
     })
     .catch((error) => {
-      console.log(error);
+      console.log(error.response.data.message);
     });
 }
-async function cancelFriendRequest() {
+
+async function acceptFriendRequest() {
   await proxy.$api
-    .put("/friend/requests/cancel", {
-      id: friendRequests.value.friendRequestId,
+    .put("/friend/requests/accept", {
+      id: friendRequests.value.id
     })
     .then((res) => {
       friendRequests.value = res.result;
     })
     .catch((error) => {
-      console.log(error);
+      console.log(error.response.data.message);
+    });
+}
+
+async function deleteFriendRequest() {
+  await proxy.$api
+    .delete("/friend/requests/"+ friendRequests.value.id)
+    .then((res) => {
+      friendRequests.value = {};
+      friendRequests.value.status = FriendRequestsStatus.FRIEND_REQUEST_NOT_EXISTED;
+    })
+    .catch((error) => {
+      console.log(error.response.data.message);
     });
 }
 
@@ -269,7 +282,7 @@ async function cancelFriendRequest() {
       <div class="ml-2 font-weight-bold">{{ receiver?.fullName }}</div>
       <div
         v-if="
-          friendRequests?.status === FriendRequestsStatus.FRIEND_REQUEST_NOT_EXISTED || friendRequests?.status === FriendRequestsStatus.CANCELLED
+          friendRequests?.status === FriendRequestsStatus.FRIEND_REQUEST_NOT_EXISTED
         "
         class="d-flex bg-deep-purple-accent-3 py-1 px-2 mt-1 cursor-pointer rounded-xl"
         @click="addFriendRequest(receiver?.id)"
@@ -278,12 +291,19 @@ async function cancelFriendRequest() {
         <span class="ml-2">Thêm bạn bè</span>
       </div>
       <div
-        v-else-if="friendRequests?.status === FriendRequestsStatus.PENDING"
+        v-if="friendRequests?.status === FriendRequestsStatus.PENDING && myInfo.id === friendRequests?.senderId"
         class="d-flex bg-deep-purple-accent-3 py-1 px-2 mt-1 cursor-pointer rounded-xl"
-        @click="cancelFriendRequest()"
+        @click="deleteFriendRequest()"
       >
         <div><font-awesome-icon :icon="['fas', 'user-plus']" /></div>
         <span class="ml-2">Hủy lời mời</span>
+      </div>
+      <div
+        v-else-if="friendRequests?.status === FriendRequestsStatus.PENDING && myInfo.id=== friendRequests?.receiverId"
+        class="d-flex bg-grey-lighten-1 py-1 px-2 mt-1 cursor-pointer rounded"
+      >
+        <span class="bg-deep-purple-accent-3 py-1 px-2 rounded-lg text-12" @click="acceptFriendRequest()">Chấp nhận lời mời</span>
+        <span class="ml-2  py-1 px-2 text-12" @click="deleteFriendRequest">Xóa lời mời</span>
       </div>
       <div v-if="friendRequests?.status === FriendRequestsStatus.ACCEPTED">
         <span class="text-12">Bạn bè</span>
@@ -354,6 +374,8 @@ async function cancelFriendRequest() {
           class="d-flex align-center outline-none border-0 flex-grow-1 ml-2"
           placeholder="Aa"
           style="resize: none"
+          :disabled="friendRequests.status !== FriendRequestsStatus.ACCEPTED"
+          :class="{'cursor-not-allowed': friendRequests.status !== FriendRequestsStatus.ACCEPTED}"
         ></textarea>
         <div class="text-purple-accent-4 pa-1 cursor-pointer">
           <font-awesome-icon :icon="['fas', 'face-smile']" />

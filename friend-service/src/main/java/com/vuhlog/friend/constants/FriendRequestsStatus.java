@@ -6,9 +6,7 @@ import org.springframework.http.HttpStatusCode;
 @Getter
 public enum FriendRequestsStatus {
     PENDING("pending"),
-    ACCEPTED("accepted"),
-    REJECTED("rejected"),
-    CANCELLED("cancelled");
+    ACCEPTED("accepted");
     FriendRequestsStatus(String status) {
         this.status = status;
     }
