@@ -11,11 +11,21 @@ import { Client } from "@stomp/stompjs";
 import { useRoute } from "vue-router";
 import { useBaseStore } from "@/store/index.js";
 import FriendRequestsStatus from "@/constants/FriendRequestsStatus.js";
+import data from "emoji-mart-vue-fast/data/all.json";
+import { Picker, EmojiIndex } from "emoji-mart-vue-fast/src";
+import "emoji-mart-vue-fast/css/emoji-mart.css";
 import Header from "./Header.vue";
 
 const store = useBaseStore();
 const { proxy } = getCurrentInstance();
 const route = useRoute();
+
+const emit = defineEmits(["updateEmoji"]);
+const emojiPickerSelected = ref(false);
+const emojiIndex = ref(new EmojiIndex(data));
+function showEmoji(emoji) {
+  messageText.value += emoji.native;
+}
 
 const conversationId = ref(route.params.conversationId);
 
@@ -193,6 +203,7 @@ async function sendMessage() {
     }),
   });
   messageText.value = "";
+  emojiPickerSelected.value=false;
 }
 //#endregion
 
@@ -229,7 +240,7 @@ async function addFriendRequest(receiverId) {
 async function acceptFriendRequest() {
   await proxy.$api
     .put("/friend/requests/accept", {
-      id: friendRequests.value.id
+      id: friendRequests.value.id,
     })
     .then((res) => {
       friendRequests.value = res.result;
@@ -241,10 +252,11 @@ async function acceptFriendRequest() {
 
 async function deleteFriendRequest() {
   await proxy.$api
-    .delete("/friend/requests/"+ friendRequests.value.id)
+    .delete("/friend/requests/" + friendRequests.value.id)
     .then((res) => {
       friendRequests.value = {};
-      friendRequests.value.status = FriendRequestsStatus.FRIEND_REQUEST_NOT_EXISTED;
+      friendRequests.value.status =
+        FriendRequestsStatus.FRIEND_REQUEST_NOT_EXISTED;
     })
     .catch((error) => {
       console.log(error.response.data.message);
@@ -282,7 +294,8 @@ async function deleteFriendRequest() {
       <div class="ml-2 font-weight-bold">{{ receiver?.fullName }}</div>
       <div
         v-if="
-          friendRequests?.status === FriendRequestsStatus.FRIEND_REQUEST_NOT_EXISTED
+          friendRequests?.status ===
+          FriendRequestsStatus.FRIEND_REQUEST_NOT_EXISTED
         "
         class="d-flex bg-deep-purple-accent-3 py-1 px-2 mt-1 cursor-pointer rounded-xl"
         @click="addFriendRequest(receiver?.id)"
@@ -291,7 +304,10 @@ async function deleteFriendRequest() {
         <span class="ml-2">Thêm bạn bè</span>
       </div>
       <div
-        v-if="friendRequests?.status === FriendRequestsStatus.PENDING && myInfo.id === friendRequests?.senderId"
+        v-if="
+          friendRequests?.status === FriendRequestsStatus.PENDING &&
+          myInfo.id === friendRequests?.senderId
+        "
         class="d-flex bg-deep-purple-accent-3 py-1 px-2 mt-1 cursor-pointer rounded-xl"
         @click="deleteFriendRequest()"
       >
@@ -299,11 +315,20 @@ async function deleteFriendRequest() {
         <span class="ml-2">Hủy lời mời</span>
       </div>
       <div
-        v-else-if="friendRequests?.status === FriendRequestsStatus.PENDING && myInfo.id=== friendRequests?.receiverId"
+        v-else-if="
+          friendRequests?.status === FriendRequestsStatus.PENDING &&
+          myInfo.id === friendRequests?.receiverId
+        "
         class="d-flex bg-grey-lighten-1 py-1 px-2 mt-1 cursor-pointer rounded"
       >
-        <span class="bg-deep-purple-accent-3 py-1 px-2 rounded-lg text-12" @click="acceptFriendRequest()">Chấp nhận lời mời</span>
-        <span class="ml-2  py-1 px-2 text-12" @click="deleteFriendRequest">Xóa lời mời</span>
+        <span
+          class="bg-deep-purple-accent-3 py-1 px-2 rounded-lg text-12"
+          @click="acceptFriendRequest()"
+          >Chấp nhận lời mời</span
+        >
+        <span class="ml-2 py-1 px-2 text-12" @click="deleteFriendRequest"
+          >Xóa lời mời</span
+        >
       </div>
       <div v-if="friendRequests?.status === FriendRequestsStatus.ACCEPTED">
         <span class="text-12">Bạn bè</span>
@@ -355,7 +380,7 @@ async function deleteFriendRequest() {
     </div>
     <!-- END BODY -->
 
-    <footer ref="footerRef" class="footer d-flex py-3 align-center">
+    <footer ref="footerRef" class="footer d-flex py-3 align-center position-relative">
       <div class="text-purple-accent-4 pa-2 ma-1 cursor-pointer">
         <font-awesome-icon :icon="['far', 'file']" />
         <v-tooltip activator="parent" location="bottom">
@@ -372,18 +397,32 @@ async function deleteFriendRequest() {
           @keydown="handlePressEnterTextArea"
           rows="2"
           class="d-flex align-center outline-none border-0 flex-grow-1 ml-2"
-          placeholder="Aa"
           style="resize: none"
           :disabled="friendRequests.status !== FriendRequestsStatus.ACCEPTED"
-          :class="{'cursor-not-allowed': friendRequests.status !== FriendRequestsStatus.ACCEPTED}"
+          :class="{
+            'cursor-not-allowed':
+              friendRequests.status !== FriendRequestsStatus.ACCEPTED,
+          }"
         ></textarea>
-        <div class="text-purple-accent-4 pa-1 cursor-pointer">
+        <div
+          class="text-purple-accent-4 pa-1 cursor-pointer position-relative"
+          @click="emojiPickerSelected = !emojiPickerSelected"
+        >
           <font-awesome-icon :icon="['fas', 'face-smile']" />
           <v-tooltip activator="parent" location="bottom">
             <span class="text-12">Chọn biểu tượng hoặc cảm xúc</span>
           </v-tooltip>
         </div>
       </div>
+      <Picker
+        v-if="emojiPickerSelected"
+        class="emoji-picker"
+        :data="emojiIndex"
+        emoji="point_up"
+        set="facebook"
+        :showPreview="false"
+        @select="showEmoji"
+      />
       <div class="text-purple-accent-4 pa-2 ma-1 cursor-pointer">
         <div v-if="!showSentIcon">
           <font-awesome-icon :icon="['fas', 'thumbs-up']" />
@@ -402,4 +441,25 @@ async function deleteFriendRequest() {
   </div>
 </template>
 
-<style lang="scss" scoped></style>
+<style lang="scss" scoped>
+.emoji-picker {
+  position: absolute;
+  bottom: 100%;
+  right: 0;
+  height: 300px;
+  width: 340px;
+  box-shadow: rgba(99, 99, 99, 0.2) 0px 2px 8px 0px;
+  &::after{
+    content: '';
+    position: absolute;
+    right: 50px;
+    top: 100%;
+    width: 0;
+    height: 0;
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+    border-top: 10px solid #ffffff;
+    clear: both;
+  }
+}
+</style>

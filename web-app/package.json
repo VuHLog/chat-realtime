@@ -16,6 +16,7 @@
     "@fortawesome/vue-fontawesome": "^3.0.8",
     "@stomp/stompjs": "^7.0.0",
     "axios": "^1.7.4",
+    "emoji-mart-vue-fast": "^15.0.2",
     "js-cookie": "^3.0.5",
     "jwt-decode": "^4.0.0",
     "pinia": "^2.2.2",
