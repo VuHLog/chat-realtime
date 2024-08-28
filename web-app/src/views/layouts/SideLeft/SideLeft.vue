@@ -2,6 +2,7 @@
 import { ref, getCurrentInstance, watch, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useBaseStore } from "@/store";
+import setting from "@layouts/SideLeft/Setting.vue";
 
 const { proxy } = getCurrentInstance();
 const store = useBaseStore();
@@ -21,11 +22,9 @@ onMounted(async () => {
 // load lại data trong component khi path thay đổi
 watch(
   () => route.params.conversationId,
-  (newVal) => {
+  async (newVal) => {
     conversationId.value = newVal;
-    totalElements.value = 0;
-    pageSize.value = 10;
-    pageNumber.value = 1;
+    await reloadData();
   }
 );
 
@@ -33,6 +32,13 @@ watch(
 const totalElements = ref(0);
 const pageSize = ref(10);
 const pageNumber = ref(1);
+
+async function reloadData() {
+  totalElements.value = 0;
+  pageSize.value = 10;
+  pageNumber.value = 1;
+  await loadData();
+}
 
 async function loadData() {
   await handleLoadMyConversation();
@@ -161,13 +167,26 @@ async function chatWith(userId) {
 }
 
 //#endregion
+
+//#region
+//xu ly hien thi cac option cho nguoi dung
+const showOptions = ref(false);
+//#endregion
 </script>
 
 <template>
   <div class="d-flex flex-column max-h-100vh h-100 px-2 border-e-sm">
-    <div class="search-box">
-      <h2 class="font-weight-bold py-3 px-1">Đoạn chat</h2>
-      <div class="d-flex align-center">
+    <div>
+      <div class="header py-3 px-1 d-flex align-center justify-space-between">
+        <h2 class="font-weight-bold py-3 px-1">Đoạn chat</h2>
+        <div class="mr-3 cursor-pointer" @click="showOptions = !showOptions">
+          <font-awesome-icon class="setting-icon" :icon="['fas', 'gear']" />
+          <v-tooltip activator="parent" location="bottom">
+            <span class="text-12">Tùy chọn</span>
+          </v-tooltip>
+        </div>
+      </div>
+      <div class="d-flex align-center search-box">
         <div
           class="back-chat-icon d-flex align-center pa-2 mr-1 text-grey-darken-1 cursor-pointer rounded-circle"
           v-if="showBackChat"
@@ -195,103 +214,116 @@ async function chatWith(userId) {
       </div>
     </div>
 
-    <div class="mt-2 h-100 overflow-y-auto">
-      <!-- SEARCH RESULTS -->
-      <div class="mt-1 pt-2" v-if="showBackChat">
-        <div v-if="isUserExisted">
-          <template v-for="user in searchResults" :key="user.id">
+    <transition name="slide-fade" mode="out-in">
+      <div class="mt-2 h-100 overflow-y-auto" v-if="!showOptions">
+        <!-- SEARCH RESULTS -->
+        <div class="mt-1 pt-2" v-if="showBackChat">
+          <div v-if="isUserExisted">
+            <template v-for="user in searchResults" :key="user.id">
+              <div
+                class="search-results d-flex align-center px-1 py-2 cursor-pointer rounded user-select-none position-relative"
+                @click="chatWith(user.id)"
+              >
+                <div class="d-flex align-center">
+                  <img
+                    class="width-avatar height-avatar rounded-circle object-cover object-center"
+                    :src="user.avatarUrl"
+                    alt=""
+                  />
+                </div>
+                <div class="d-flex flex-column ml-2 justify-center">
+                  <div class="text-14">{{ user.fullName }}</div>
+                  <div class="text-12 text-grey-darken-1">
+                    <span>{{ user.username }}</span>
+                  </div>
+                </div>
+              </div>
+            </template>
             <div
-              class="search-results d-flex align-center px-1 py-2 cursor-pointer rounded user-select-none position-relative"
-              @click="chatWith(user.id)"
+              class="text-center"
+              v-if="totalSearchResults > searchResults.length"
+            >
+              <span
+                class="cursor-pointer text-decoration-underline text-light-blue-accent-3 text-14"
+                @click="clickMoreSearchResults()"
+                >Xem thêm</span
+              >
+            </div>
+          </div>
+          <div class="text-center" v-else>
+            Không tìm thấy kết quả cho {{ searchText }}
+          </div>
+        </div>
+        <!-- CHAT LIST -->
+        <div class="mt-2 h-100 overflow-y-auto" v-if="!showBackChat">
+          <template
+            v-for="conversation in myConversations"
+            :key="conversation.id"
+          >
+            <div
+              class="d-flex align-center px-1 py-2 cursor-pointer chat-box rounded user-select-none position-relative"
+              :class="conversation?.id === conversationId ? 'active' : ''"
+              @click="
+                chatWith(
+                  conversation.type === 1 ? conversation?.receivers?.id : ''
+                )
+              "
             >
               <div class="d-flex align-center">
                 <img
                   class="width-avatar height-avatar rounded-circle object-cover object-center"
-                  :src="user.avatarUrl"
+                  :src="
+                    conversation.type === 1
+                      ? conversation?.receivers?.avatarUrl
+                      : ''
+                  "
                   alt=""
                 />
               </div>
               <div class="d-flex flex-column ml-2 justify-center">
-                <div class="text-14">{{ user.fullName }}</div>
-                <div class="text-12 text-grey-darken-1">
-                  <span>{{ user.username }}</span>
+                <div class="text-14 font-weight-bold">
+                  {{
+                    conversation.type === 1
+                      ? conversation?.receivers?.fullName
+                      : ""
+                  }}
                 </div>
+                <div class="text-12 text-grey-darken-1">
+                  <span>{{
+                    `${
+                      conversation?.lastMessage?.senderId === myUserId
+                        ? "Bạn: "
+                        : ""
+                    }${conversation.lastMessage?.content}`
+                  }}</span>
+                  <span class="ml-2">3 giờ</span>
+                </div>
+              </div>
+              <div
+                class="position-absolute rounded-circle bg-white chat-box__options d-none align-center justify-center"
+              >
+                <font-awesome-icon :icon="['fas', 'ellipsis']" />
               </div>
             </div>
           </template>
-          <div
-            class="text-center"
-            v-if="totalSearchResults > searchResults.length"
-          >
-            <span
-              class="cursor-pointer text-decoration-underline text-light-blue-accent-3 text-14"
-              @click="clickMoreSearchResults()"
-              >Xem thêm</span
-            >
-          </div>
-        </div>
-        <div class="text-center" v-else>
-          Không tìm thấy kết quả cho {{ searchText }}
         </div>
       </div>
-      <!-- CHAT LIST -->
-      <div class="mt-2 h-100 overflow-y-auto" v-if="!showBackChat">
-        <template
-          v-for="conversation in myConversations"
-          :key="conversation.id"
-        >
-          <div
-            class="d-flex align-center px-1 py-2 cursor-pointer chat-box rounded user-select-none position-relative"
-            :class="conversation?.id === conversationId ? 'active' : ''"
-            @click="
-              chatWith(
-                conversation.type === 1 ? conversation?.receivers?.id : ''
-              )
-            "
-          >
-            <div class="d-flex align-center">
-              <img
-                class="width-avatar height-avatar rounded-circle object-cover object-center"
-                :src="
-                  conversation.type === 1
-                    ? conversation?.receivers?.avatarUrl
-                    : ''
-                "
-                alt=""
-              />
-            </div>
-            <div class="d-flex flex-column ml-2 justify-center">
-              <div class="text-14 font-weight-bold">
-                {{
-                  conversation.type === 1
-                    ? conversation?.receivers?.fullName
-                    : ""
-                }}
-              </div>
-              <div class="text-12 text-grey-darken-1">
-                <span>{{
-                  `${
-                    conversation?.lastMessage?.senderId === myUserId
-                      ? "Bạn: "
-                      : ""
-                  }${conversation.lastMessage?.content}`
-                }}</span>
-                <span class="ml-2">3 giờ</span>
-              </div>
-            </div>
-            <div
-              class="position-absolute rounded-circle bg-white chat-box__options d-none align-center justify-center"
-            >
-              <font-awesome-icon :icon="['fas', 'ellipsis']" />
-            </div>
-          </div>
-        </template>
-      </div>
-    </div>
+
+      <!-- SETTING -->
+      <setting v-else></setting>
+    </transition>
   </div>
 </template>
 
 <style lang="scss" scoped>
+.header{
+  .setting-icon{
+    transition: all 0.4 linear;
+    &:hover{
+      transform: rotate(-20deg);
+    }
+  }
+}
 .search-box {
   .back-chat-icon:hover {
     background-color: #eeeeee;
@@ -322,5 +354,19 @@ async function chatWith(userId) {
     width: 36px;
     right: 10%;
   }
+}
+
+.slide-fade-enter-active {
+  transition: all 0.1s ease-out;
+}
+
+.slide-fade-leave-active {
+  transition: all 0.1s cubic-bezier(1, 0.5, 0.8, 1);
+}
+
+.slide-fade-enter-from,
+.slide-fade-leave-to {
+  transform: translateX(-20px);
+  opacity: 0;
 }
 </style>
