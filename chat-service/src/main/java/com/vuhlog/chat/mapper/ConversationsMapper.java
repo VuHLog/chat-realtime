@@ -3,6 +3,7 @@ package com.vuhlog.chat.mapper;
 import com.vuhlog.chat.Utils.TimestampUtil;
 import com.vuhlog.chat.dto.Request.ConversationsRequest;
 import com.vuhlog.chat.dto.Response.ConversationsResponse;
+import com.vuhlog.chat.dto.Response.LatestConversationResponse;
 import com.vuhlog.chat.entity.Conversations;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -14,6 +15,8 @@ import java.sql.Timestamp;
 public interface ConversationsMapper {
     @Mapping(target = "groupMembers", ignore = true)
     Conversations toConversations(ConversationsRequest request);
+
+    LatestConversationResponse toLatestConversationResponse(Conversations conversation);
 
     @Named("timestampToString")
     @Mapping(target = "createdAt", expression = "java(timestampToString(conversations.getCreatedAt()))")

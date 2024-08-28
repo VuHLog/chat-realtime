@@ -2,6 +2,7 @@ package com.vuhlog.chat.service.ServiceImpl;
 
 import com.vuhlog.chat.dto.Request.ConversationsRequest;
 import com.vuhlog.chat.dto.Response.ConversationsResponse;
+import com.vuhlog.chat.dto.Response.LatestConversationResponse;
 import com.vuhlog.chat.entity.Conversations;
 import com.vuhlog.chat.entity.GroupMember;
 import com.vuhlog.chat.mapper.ConversationsMapper;
@@ -34,8 +35,7 @@ public class ConversationsServiceImpl implements ConversationsService {
 
     @Override
     public ConversationsResponse addConversation(ConversationsRequest request) {
-        String usernameCreator = SecurityContextHolder.getContext().getAuthentication().getName();
-        String userId = identityClient.getUserByUsername(usernameCreator).getResult().getId();
+        String userId = getMyUserId();
 
         if (request.getType() == 1) {
             ConversationsResponse conversationsResponse =
@@ -69,15 +69,25 @@ public class ConversationsServiceImpl implements ConversationsService {
 
     @Override
     public Page<ConversationsResponse> getMyConversations(Pageable pageable) {
-        String usernameCreator = SecurityContextHolder.getContext().getAuthentication().getName();
-        String userId = identityClient.getUserByUsername(usernameCreator).getResult().getId();
+        String userId = getMyUserId();
 
         return conversationsRepository.findByGroupMembers_UserId(userId, pageable).map(conversationsMapper::toConversationsResponse);
+    }
+
+    @Override
+    public LatestConversationResponse getLatestConversation() {
+        String userId = getMyUserId();
+        return conversationsMapper.toLatestConversationResponse(conversationsRepository.findTop1ByGroupMembers_UserIdOrderByUpdatedAtDesc(userId));
     }
 
     @Override
     public ConversationsResponse getPrivateMessageByMemberIdAndType(String userId, String receiverId, int type) {
         Conversations conversation = conversationsRepository.findPrivateMessageByMembersIdAndType(userId, receiverId, type);
         return conversationsMapper.toConversationsResponse(conversation);
+    }
+
+    private String getMyUserId(){
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        return identityClient.getUserByUsername(username).getResult().getId();
     }
 }

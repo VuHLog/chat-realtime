@@ -3,6 +3,7 @@ package com.vuhlog.chat.controller;
 import com.vuhlog.chat.dto.ApiResponse;
 import com.vuhlog.chat.dto.Request.ConversationsRequest;
 import com.vuhlog.chat.dto.Response.ConversationsResponse;
+import com.vuhlog.chat.dto.Response.LatestConversationResponse;
 import com.vuhlog.chat.dto.Response.MessagesResponse;
 import com.vuhlog.chat.entity.Conversations;
 import com.vuhlog.chat.service.ConversationsService;
@@ -55,5 +56,13 @@ public class ConversationsController {
 
         Pageable pageable = PageRequest.of(pageNumber, pageSize, sortable);
         return conversationsService.getMyConversations(pageable);
+    }
+
+    @GetMapping("/latest")
+    public ApiResponse<LatestConversationResponse> getLatestConversation(
+    ) {
+        return ApiResponse.<LatestConversationResponse>builder()
+                .result(conversationsService.getLatestConversation())
+                .build();
     }
 }

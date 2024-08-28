@@ -6,6 +6,7 @@ import AuthLayout from "@layouts/AuthLayout.vue";
 import SignIn from "@pages/SignIn.vue";
 import SignUp from "@pages/SignUp.vue";
 import Home from "@pages/Home.vue";
+import Messages from "@pages/Messages.vue";
 
 const routes = [
   {
@@ -23,7 +24,7 @@ const routes = [
       { 
         path: "/messages/:conversationId",
         name: "Messages",
-        component: Home
+        component: Messages
         }
     ],
   },

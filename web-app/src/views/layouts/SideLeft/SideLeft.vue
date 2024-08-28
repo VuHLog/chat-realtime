@@ -15,7 +15,7 @@ onMounted(async () => {
   await store.getMyUserId().then((res) => {
     myUserId.value = res;
   });
-  await handleLoadMyConversation();
+  await loadData();
 });
 
 // load lại data trong component khi path thay đổi

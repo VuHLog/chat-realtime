@@ -21,4 +21,6 @@ public interface ConversationsRepository extends JpaRepository<Conversations, St
     );
 
     Page<Conversations> findByGroupMembers_UserId(@Param("userId") String userId, Pageable pageable);
+
+    Conversations findTop1ByGroupMembers_UserIdOrderByUpdatedAtDesc(String userId);
 }
