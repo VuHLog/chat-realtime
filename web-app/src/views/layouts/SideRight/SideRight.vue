@@ -264,7 +264,6 @@ async function deleteFriendRequest() {
 }
 
 function unfriend(status) {
-  alert("unfriend")
   friendRequests.value = {};
   friendRequests.value.status = status;
 }

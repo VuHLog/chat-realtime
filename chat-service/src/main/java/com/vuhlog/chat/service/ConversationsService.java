@@ -16,4 +16,6 @@ public interface ConversationsService {
     LatestConversationResponse getLatestConversation();
 
     ConversationsResponse addConversation(ConversationsRequest request);
+
+    void deleteConversation(String conversationId);
 }

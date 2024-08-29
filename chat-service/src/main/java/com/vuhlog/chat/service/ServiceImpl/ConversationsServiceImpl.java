@@ -62,6 +62,11 @@ public class ConversationsServiceImpl implements ConversationsService {
     }
 
     @Override
+    public void deleteConversation(String conversationId) {
+        conversationsRepository.findById(conversationId).ifPresent(conversation -> conversationsRepository.deleteById(conversationId));
+    }
+
+    @Override
     public ConversationsResponse getConversationById(String conversationId) {
         Conversations conversation = conversationsRepository.findById(conversationId).get();
         return conversationsMapper.toConversationsResponse(conversation);

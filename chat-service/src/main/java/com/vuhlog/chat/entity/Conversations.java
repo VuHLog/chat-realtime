@@ -36,7 +36,7 @@ public class Conversations {
     @Column
     private String lastMessageId;
 
-    @OneToMany(mappedBy = "conversation")
+    @OneToMany(mappedBy = "conversation", cascade = CascadeType.ALL)
     @JsonManagedReference
     private Set<Messages> messages;
 

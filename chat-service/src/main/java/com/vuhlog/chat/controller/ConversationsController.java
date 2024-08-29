@@ -65,4 +65,10 @@ public class ConversationsController {
                 .result(conversationsService.getLatestConversation())
                 .build();
     }
+
+    @DeleteMapping("/{conversationId}")
+    public ApiResponse<Void> deleteConversation(@PathVariable String conversationId){
+        conversationsService.deleteConversation(conversationId);
+        return ApiResponse.<Void>builder().build();
+    }
 }

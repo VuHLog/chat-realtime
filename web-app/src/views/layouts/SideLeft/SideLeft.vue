@@ -1,10 +1,11 @@
 <script setup>
-import { ref, getCurrentInstance, watch, onMounted } from "vue";
+import { ref, getCurrentInstance, watch, onMounted, inject } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useBaseStore } from "@/store";
 import setting from "@layouts/SideLeft/Setting.vue";
 
 const { proxy } = getCurrentInstance();
+const swal = inject("$swal");
 const store = useBaseStore();
 const router = useRouter();
 const route = useRoute();
@@ -172,6 +173,25 @@ async function chatWith(userId) {
 //xu ly hien thi cac option cho nguoi dung
 const showOptions = ref(false);
 //#endregion
+
+//xoa cuoc tro chuyen
+async function deleteConversation(conversationId) {
+  swal
+    .fire({
+      title: "Bạn có muốn cuộc trò chuyện này?",
+      showCancelButton: true,
+      confirmButtonText: "Có",
+      showCancelButton: true,
+      cancelButtonText: "Không",
+    })
+    .then((result) => {
+      if (result.isConfirmed) {
+        proxy.$api.delete("/chat/conversations/" + conversationId).then(() => {
+          myConversations.value = myConversations.value.filter((value) => value.id !== conversationId);
+        });
+      }
+    });
+}
 </script>
 
 <template>
@@ -263,46 +283,51 @@ const showOptions = ref(false);
             <div
               class="d-flex align-center px-1 py-2 cursor-pointer chat-box rounded user-select-none position-relative"
               :class="conversation?.id === conversationId ? 'active' : ''"
-              @click="
-                chatWith(
-                  conversation.type === 1 ? conversation?.receivers?.id : ''
-                )
-              "
             >
-              <div class="d-flex align-center">
-                <img
-                  class="width-avatar height-avatar rounded-circle object-cover object-center"
-                  :src="
-                    conversation.type === 1
-                      ? conversation?.receivers?.avatarUrl
-                      : ''
-                  "
-                  alt=""
-                />
-              </div>
-              <div class="d-flex flex-column ml-2 justify-center">
-                <div class="text-14 font-weight-bold">
-                  {{
-                    conversation.type === 1
-                      ? conversation?.receivers?.fullName
-                      : ""
-                  }}
+              <div
+                class="d-flex align-center w-100"
+                @click="
+                  chatWith(
+                    conversation.type === 1 ? conversation?.receivers?.id : ''
+                  )
+                "
+              >
+                <div class="d-flex align-center">
+                  <img
+                    class="width-avatar height-avatar rounded-circle object-cover object-center"
+                    :src="
+                      conversation.type === 1
+                        ? conversation?.receivers?.avatarUrl
+                        : ''
+                    "
+                    alt=""
+                  />
                 </div>
-                <div class="text-12 text-grey-darken-1">
-                  <span>{{
-                    `${
-                      conversation?.lastMessage?.senderId === myUserId
-                        ? "Bạn: "
+                <div class="d-flex flex-column ml-2 justify-center">
+                  <div class="text-14 font-weight-bold">
+                    {{
+                      conversation.type === 1
+                        ? conversation?.receivers?.fullName
                         : ""
-                    }${conversation.lastMessage?.content}`
-                  }}</span>
-                  <span class="ml-2">3 giờ</span>
+                    }}
+                  </div>
+                  <div class="text-12 text-grey-darken-1">
+                    <span>{{
+                      `${
+                        conversation?.lastMessage?.senderId === myUserId
+                          ? "Bạn: "
+                          : ""
+                      }${conversation.lastMessage?.content}`
+                    }}</span>
+                    <span class="ml-2">3 giờ</span>
+                  </div>
                 </div>
               </div>
               <div
                 class="position-absolute rounded-circle bg-white chat-box__options d-none align-center justify-center"
+                @click="deleteConversation(conversation.id)"
               >
-                <font-awesome-icon :icon="['fas', 'ellipsis']" />
+                <font-awesome-icon :icon="['fas', 'trash']" />
               </div>
             </div>
           </template>
@@ -316,10 +341,10 @@ const showOptions = ref(false);
 </template>
 
 <style lang="scss" scoped>
-.header{
-  .setting-icon{
+.header {
+  .setting-icon {
     transition: all 0.4 linear;
-    &:hover{
+    &:hover {
       transform: rotate(-20deg);
     }
   }
@@ -353,6 +378,9 @@ const showOptions = ref(false);
     height: 36px;
     width: 36px;
     right: 10%;
+    &:hover {
+      background-color: #bdbdbd !important;
+    }
   }
 }
 
