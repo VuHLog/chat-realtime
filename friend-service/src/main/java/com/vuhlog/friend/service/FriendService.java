@@ -10,9 +10,11 @@ public interface FriendService {
 
     FriendsStatusResponse acceptFriendRequest(FriendRequestUpdate friendRequests);
 
-    void deleteFriendRequest(String friendRequestId);
-
     Boolean existsByUserIdAndFriendId(String friendId);
 
     FriendRequestsResponse findBySenderIdAndReceiverId(String receiverId);
+
+    void deleteFriendRequest(String friendId);
+
+    void unfriend(String friendId);
 }

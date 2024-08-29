@@ -103,6 +103,22 @@ public class FriendServiceImpl implements FriendService {
     }
 
     @Override
+    public void unfriend(String friendId) {
+        if(!existsByUserIdAndFriendId(friendId)){
+            throw new AppException(ErrorCode.FRIEND_NOT_EXISTED);
+        }
+        String userId = getUserId();
+        Friends friends = friendsRepository.findByUserIdAndFriendId(userId, friendId);
+        friendsRepository.deleteById(friends.getId());
+
+        friends = friendsRepository.findByUserIdAndFriendId(friendId, userId);
+        friendsRepository.deleteById(friends.getId());
+
+        FriendRequests friendRequest = friendRequestExisted(friendId).orElseThrow(() -> new AppException(ErrorCode.FRIEND_REQUEST_NOT_EXISTED));
+        friendRequestsRepository.deleteById(friendRequest.getId());
+    }
+
+    @Override
     public Boolean existsByUserIdAndFriendId(String friendId) {
         String userId = getUserId();
         return friendsRepository.existsByUserIdAndFriendId(userId, friendId);

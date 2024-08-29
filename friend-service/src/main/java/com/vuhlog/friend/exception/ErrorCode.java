@@ -10,7 +10,8 @@ public enum ErrorCode {
     INVALID_KEY(1001, "Uncategorized error", HttpStatus.BAD_REQUEST),
     UNAUTHENTICATED(1006, "Unauthenticated", HttpStatus.UNAUTHORIZED),
     UNAUTHORIZED(1007, "You do not have permission", HttpStatus.FORBIDDEN),
-    FRIEND_EXISTED(1011, "Friend request existed", HttpStatus.BAD_REQUEST),
+    FRIEND_EXISTED(1011, "Friend existed", HttpStatus.BAD_REQUEST),
+    FRIEND_NOT_EXISTED(1011, "Friend not existed", HttpStatus.BAD_REQUEST),
     FRIEND_REQUEST_NOT_EXISTED(1013, "Friend request not existed", HttpStatus.NOT_FOUND),
     FRIEND_REQUEST_EXISTED(1014, "Friend request existed", HttpStatus.NOT_FOUND),
     ;

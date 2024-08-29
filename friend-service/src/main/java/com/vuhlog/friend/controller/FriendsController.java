@@ -10,35 +10,41 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/requests")
+@RequestMapping("")
 public class FriendsController {
     @Autowired
     private FriendService friendService;
 
-    @GetMapping("/{receiverId}")
+    @GetMapping("/requests/{receiverId}")
     public ApiResponse<FriendRequestsResponse> getRequestBySenderIdAndReceiverId(@PathVariable String receiverId){
         return ApiResponse.<FriendRequestsResponse>builder()
                 .result(friendService.findBySenderIdAndReceiverId(receiverId))
                 .build();
     }
 
-    @PostMapping("")
+    @PostMapping("/requests")
     public ApiResponse<FriendsStatusResponse> addFriendRequest(@RequestBody FriendRequestsDTO request){
         return ApiResponse.<FriendsStatusResponse>builder()
                 .result(friendService.addFriendRequest(request))
                 .build();
     }
 
-    @PutMapping("/accept")
+    @PutMapping("/requests/accept")
     public ApiResponse<FriendsStatusResponse> acceptFriendRequest(@RequestBody FriendRequestUpdate request){
         return ApiResponse.<FriendsStatusResponse>builder()
                 .result(friendService.acceptFriendRequest(request))
                 .build();
     }
 
-    @DeleteMapping("/{friendRequestId}")
+    @DeleteMapping("/requests/{friendRequestId}")
     public ApiResponse<Void> cancelFriendRequest(@PathVariable String friendRequestId){
         friendService.deleteFriendRequest(friendRequestId);
+        return ApiResponse.<Void>builder().build();
+    }
+
+    @DeleteMapping("/{friendId}")
+    public ApiResponse<Void> unFriend(@PathVariable String friendId){
+        friendService.unfriend(friendId);
         return ApiResponse.<Void>builder().build();
     }
 }

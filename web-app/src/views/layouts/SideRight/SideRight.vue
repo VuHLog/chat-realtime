@@ -203,7 +203,7 @@ async function sendMessage() {
     }),
   });
   messageText.value = "";
-  emojiPickerSelected.value=false;
+  emojiPickerSelected.value = false;
 }
 //#endregion
 
@@ -263,6 +263,12 @@ async function deleteFriendRequest() {
     });
 }
 
+function unfriend(status) {
+  alert("unfriend")
+  friendRequests.value = {};
+  friendRequests.value.status = status;
+}
+
 //#endregion
 </script>
 
@@ -274,12 +280,21 @@ async function deleteFriendRequest() {
     <Header
       ref="headerRef"
       :receiver="receiver"
+      :isFriend="friendRequests?.status === FriendRequestsStatus.ACCEPTED"
       class="position-sticky top-0 right-0 left-0 z-index-99 bg-white"
+      @unfriend="
+        (value) => {
+          unfriend(value);
+        }
+      "
     ></Header>
 
     <div
-      class="d-flex flex-column align-center mt-10"
-      v-if="messages.length === 0"
+      class="d-flex flex-column align-center mt-10 mb-5"
+      v-if="
+        messages.length === 0 ||
+        friendRequests?.status !== FriendRequestsStatus.ACCEPTED
+      "
     >
       <div>
         <img
@@ -380,7 +395,10 @@ async function deleteFriendRequest() {
     </div>
     <!-- END BODY -->
 
-    <footer ref="footerRef" class="footer d-flex py-3 align-center position-relative">
+    <footer
+      ref="footerRef"
+      class="footer d-flex py-3 align-center position-relative"
+    >
       <div class="text-purple-accent-4 pa-2 ma-1 cursor-pointer">
         <font-awesome-icon :icon="['far', 'file']" />
         <v-tooltip activator="parent" location="bottom">
@@ -449,8 +467,8 @@ async function deleteFriendRequest() {
   height: 300px;
   width: 340px;
   box-shadow: rgba(99, 99, 99, 0.2) 0px 2px 8px 0px;
-  &::after{
-    content: '';
+  &::after {
+    content: "";
     position: absolute;
     right: 50px;
     top: 100%;
