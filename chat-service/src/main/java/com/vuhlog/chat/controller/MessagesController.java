@@ -48,4 +48,11 @@ public class MessagesController {
                 .result(messagesService.getMessageById(messageId))
                 .build();
     }
+
+    @DeleteMapping("/{messageId}")
+    public ApiResponse<Void> deleteMessageById(@PathVariable("messageId") String messageId) {
+        messagesService.deleteMessageById(messageId);
+        return ApiResponse.<Void>builder()
+                .build();
+    }
 }

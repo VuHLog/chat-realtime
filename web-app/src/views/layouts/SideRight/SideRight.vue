@@ -4,8 +4,8 @@ import {
   onBeforeUnmount,
   ref,
   watch,
+  inject,
   getCurrentInstance,
-  computed,
 } from "vue";
 import { Client } from "@stomp/stompjs";
 import { useRoute } from "vue-router";
@@ -19,6 +19,7 @@ import Header from "./Header.vue";
 const store = useBaseStore();
 const { proxy } = getCurrentInstance();
 const route = useRoute();
+const swal = inject("$swal");
 
 const emit = defineEmits(["updateEmoji"]);
 const emojiPickerSelected = ref(false);
@@ -269,6 +270,27 @@ function unfriend(status) {
 }
 
 //#endregion
+
+//xu ly message options
+//#region
+function deleteMessage(messageId) {
+  swal
+    .fire({
+      title: "Bạn có muốn tin nhắn này?",
+      showCancelButton: true,
+      confirmButtonText: "Có",
+      showCancelButton: true,
+      cancelButtonText: "Không",
+    })
+    .then((result) => {
+      if (result.isConfirmed) {
+        proxy.$api.delete("/chat/messages/" + messageId).then(() => {
+          messages.value = messages.value.filter((value) => value.id !== messageId);
+        });
+      }
+    });
+}
+//#endregion
 </script>
 
 <template>
@@ -356,14 +378,14 @@ function unfriend(status) {
       :style="{ maxHeight: bodyHeight }"
     >
       <template v-for="message in messages" :key="message.id">
-        <div>
+        <div class="message">
           <div
             class="text-center text-grey-darken-1 text-12 font-weight-medium"
           >
             {{ message.timeSent }}
           </div>
           <div
-            class="d-flex"
+            class="d-flex align-center"
             :class="{ 'justify-end': message.senderId === myInfo.id }"
           >
             <div class="d-flex max-w-40p px-4">
@@ -387,6 +409,21 @@ function unfriend(status) {
               >
                 {{ message.content }}
               </p>
+            </div>
+            <div
+              class="position-relative message_options"
+              :class="{ 'order-first': message.senderId === myInfo.id }"
+              v-if="message.senderId === myInfo.id"
+            >
+              <div
+                class="w-28px h-28px rounded-circle d-none align-center justify-center message_options-icon cursor-pointer"
+                @click="deleteMessage(message.id)"
+              >
+                <font-awesome-icon :icon="['fas', 'trash']" />
+                <v-tooltip activator="parent" location="bottom">
+                  <span class="text-12">Gỡ</span>
+                </v-tooltip>
+              </div>
             </div>
           </div>
         </div>
@@ -477,6 +514,19 @@ function unfriend(status) {
     border-right: 10px solid transparent;
     border-top: 10px solid #ffffff;
     clear: both;
+  }
+}
+
+.message {
+  &:hover .message_options-icon {
+    display: flex !important;
+  }
+  .message_options {
+    .message_options-icon {
+      &:hover {
+        background-color: #e0e0e0 !important;
+      }
+    }
   }
 }
 </style>

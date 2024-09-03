@@ -65,4 +65,9 @@ public class MessagesServiceImpl implements MessagesService {
     public MessagesResponse MessageResponseWS(String messageId) {
         return getMessageById(messageId);
     }
+
+    @Override
+    public void deleteMessageById(String messageId) {
+        messagesRepository.findById(messageId).ifPresent(message -> messagesRepository.deleteById(messageId));
+    }
 }
