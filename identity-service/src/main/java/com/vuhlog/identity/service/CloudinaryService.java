@@ -15,9 +15,21 @@ public class CloudinaryService {
 
     private final Cloudinary cloudinary;
 
-    public Map upload(MultipartFile file)  {
+    public Map uploadImage(MultipartFile file)  {
         try{
             Map data = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.emptyMap());
+
+            String url = (String) data.get("url");
+
+            return Map.of("url", url);
+        }catch (IOException io){
+            throw new RuntimeException("Image upload fail");
+        }
+    }
+
+    public Map uploadFile(MultipartFile file)  {
+        try{
+            Map data = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.asMap("resource_type", "raw"));
 
             String url = (String) data.get("url");
 

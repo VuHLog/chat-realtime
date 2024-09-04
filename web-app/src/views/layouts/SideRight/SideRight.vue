@@ -11,6 +11,7 @@ import { Client } from "@stomp/stompjs";
 import { useRoute } from "vue-router";
 import { useBaseStore } from "@/store/index.js";
 import FriendRequestsStatus from "@/constants/FriendRequestsStatus.js";
+import MessageContentType from "@/constants/MessageContentType.js";
 import data from "emoji-mart-vue-fast/data/all.json";
 import { Picker, EmojiIndex } from "emoji-mart-vue-fast/src";
 import "emoji-mart-vue-fast/css/emoji-mart.css";
@@ -148,7 +149,7 @@ function handlePressEnterTextArea(event) {
   else if (event.shiftKey) return;
 
   event.preventDefault();
-  sendMessage();
+  sendMessage(MessageContentType.TEXT,null);
 }
 
 const stompClient = new Client({
@@ -180,12 +181,20 @@ function disconnect() {
   console.log("Disconnected");
 }
 
-async function sendMessage() {
+async function sendMessage(contentType,url) {
   let messageRequest = {
     content: messageText.value,
-    contentType: "text",
+    contentType: contentType,
     conversationId: conversationId.value,
   };
+  if (contentType === MessageContentType.FILE) {
+    messageRequest = {
+      content: file.value.name,
+      contentType: contentType,
+      url: url,
+      conversationId: conversationId.value,
+    };
+  }
   let messageId = null;
   await proxy.$api
     .post("/chat/messages", messageRequest)
@@ -205,6 +214,29 @@ async function sendMessage() {
   });
   messageText.value = "";
   emojiPickerSelected.value = false;
+}
+
+//xu ly gui file
+const file = ref(null);
+async function handleFileUpload(event) {
+  file.value = event.target.files[0];
+  let url = await submitFile();
+  await sendMessage(MessageContentType.FILE, url);
+}
+
+async function submitFile() {
+  let formData = new FormData();
+  let url = null;
+  formData.append("file", file.value);
+  await proxy.$api
+    .postFile("/identity/cloudinary/upload/file", formData)
+    .then((res) => {
+      url = res.url;
+      console.log(res.url);
+    })
+    .catch((error) => console.log(error));
+    console.log(url);
+    return url;
 }
 //#endregion
 
@@ -285,7 +317,9 @@ function deleteMessage(messageId) {
     .then((result) => {
       if (result.isConfirmed) {
         proxy.$api.delete("/chat/messages/" + messageId).then(() => {
-          messages.value = messages.value.filter((value) => value.id !== messageId);
+          messages.value = messages.value.filter(
+            (value) => value.id !== messageId
+          );
         });
       }
     });
@@ -407,7 +441,10 @@ function deleteMessage(messageId) {
                     : 'bg-grey-lighten-3'
                 "
               >
-                {{ message.content }}
+                <template v-if="message.contentType === MessageContentType.TEXT">
+                  {{ message.content }}
+                </template>
+                <a class="text-white" :href="message.url" v-else-if="message.contentType === MessageContentType.FILE">{{ message.content }}</a>
               </p>
             </div>
             <div
@@ -436,10 +473,20 @@ function deleteMessage(messageId) {
       class="footer d-flex py-3 align-center position-relative"
     >
       <div class="text-purple-accent-4 pa-2 ma-1 cursor-pointer">
-        <font-awesome-icon :icon="['far', 'file']" />
+        <label for="formFile" class="cursor-pointer">
+          <font-awesome-icon for="formFile" :icon="['far', 'file']" />
+        </label>
         <v-tooltip activator="parent" location="bottom">
           <span class="text-12">Đính kèm file</span>
         </v-tooltip>
+        <input
+          class="w-100 py-2 pl-1 mt-6 d-none"
+          type="file"
+          id="formFile"
+          accept="application/msword, application/vnd.ms-excel, application/vnd.ms-powerpoint,
+text/plain, application/pdf"
+          @change="handleFileUpload($event)"
+        />
       </div>
       <div
         class="d-flex align-center px-2 bg-grey-lighten-4 rounded-xl flex-grow-1"
@@ -484,7 +531,7 @@ function deleteMessage(messageId) {
             <span class="text-12">Gửi lượt thích</span>
           </v-tooltip>
         </div>
-        <div v-else @click="sendMessage()">
+        <div v-else @click="sendMessage(MessageContentType.TEXT, null)">
           <font-awesome-icon :icon="['fas', 'paper-plane']" />
           <v-tooltip activator="parent" location="bottom">
             <span class="text-12">Nhấn Enter để gửi</span>

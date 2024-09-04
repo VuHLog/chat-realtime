@@ -37,6 +37,9 @@ public class Messages {
     @Column
     private String status;
 
+    @Column
+    private String url;
+
     @ManyToOne(cascade = CascadeType.MERGE)
     @JoinColumn(name = "conversation_id")
     @JsonBackReference

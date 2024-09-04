@@ -20,7 +20,7 @@ public class MessagesController {
     private MessagesService messagesService;
 
     @PostMapping("")
-    public ApiResponse<MessagesResponse> sendMessage(@RequestBody MessagesRequest request) throws Exception {
+    public ApiResponse<MessagesResponse> sendMessage(@RequestBody MessagesRequest request) {
         String conversationId = request.getConversationId();
         return ApiResponse.<MessagesResponse>builder()
                 .result(messagesService.sendMessage(request, conversationId))

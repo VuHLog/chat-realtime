@@ -42,7 +42,7 @@ async function submitFile() {
 
   formData.append("image", file.value);
   await proxy.$api
-    .postFile("/identity/cloudinary/upload", formData)
+    .postFile("/identity/cloudinary/upload/image", formData)
     .then((res) => {
       user.value.avatarUrl = res.url;
       console.log(res.url);

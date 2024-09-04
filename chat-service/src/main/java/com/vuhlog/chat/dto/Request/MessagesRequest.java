@@ -15,6 +15,8 @@ public class MessagesRequest {
 
     private String contentType;
 
+    private String url;
+
     private String conversationId;
 
 //    private Set<ReadReceipts> readReceipts;
