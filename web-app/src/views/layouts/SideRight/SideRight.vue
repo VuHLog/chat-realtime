@@ -140,6 +140,8 @@ const showSentIcon = ref(false);
 watch(messageText, (newVal) => {
   if (newVal !== "") {
     showSentIcon.value = true;
+  } else {
+    showSentIcon.value = false;
   }
 });
 
@@ -149,7 +151,7 @@ function handlePressEnterTextArea(event) {
   else if (event.shiftKey) return;
 
   event.preventDefault();
-  sendMessage(MessageContentType.TEXT,null);
+  sendMessage(MessageContentType.TEXT, null);
 }
 
 const stompClient = new Client({
@@ -181,7 +183,7 @@ function disconnect() {
   console.log("Disconnected");
 }
 
-async function sendMessage(contentType,url) {
+async function sendMessage(contentType, url) {
   let messageRequest = {
     content: messageText.value,
     contentType: contentType,
@@ -216,6 +218,11 @@ async function sendMessage(contentType,url) {
   emojiPickerSelected.value = false;
 }
 
+async function sendLikeIcon() {
+  messageText.value = "👍🏼";
+  sendMessage(MessageContentType.TEXT, null);
+}
+
 //xu ly gui file
 const file = ref(null);
 async function handleFileUpload(event) {
@@ -235,8 +242,8 @@ async function submitFile() {
       console.log(res.url);
     })
     .catch((error) => console.log(error));
-    console.log(url);
-    return url;
+  console.log(url);
+  return url;
 }
 //#endregion
 
@@ -441,10 +448,17 @@ function deleteMessage(messageId) {
                     : 'bg-grey-lighten-3'
                 "
               >
-                <template v-if="message.contentType === MessageContentType.TEXT">
+                <template
+                  v-if="message.contentType === MessageContentType.TEXT"
+                >
                   {{ message.content }}
                 </template>
-                <a class="text-white" :href="message.url" v-else-if="message.contentType === MessageContentType.FILE">{{ message.content }}</a>
+                <a
+                  class="text-white"
+                  :href="message.url"
+                  v-else-if="message.contentType === MessageContentType.FILE"
+                  >{{ message.content }}</a
+                >
               </p>
             </div>
             <div
@@ -524,7 +538,10 @@ text/plain, application/pdf"
         :showPreview="false"
         @select="showEmoji"
       />
-      <div class="text-purple-accent-4 pa-2 ma-1 cursor-pointer">
+      <div
+        class="text-purple-accent-4 pa-2 ma-1 cursor-pointer"
+        @click="sendLikeIcon()"
+      >
         <div v-if="!showSentIcon">
           <font-awesome-icon :icon="['fas', 'thumbs-up']" />
           <v-tooltip activator="parent" location="bottom">
