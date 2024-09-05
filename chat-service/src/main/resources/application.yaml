@@ -19,6 +19,24 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: true
+  rabbitmq:
+    stream:
+      host: localhost
+      port: 5672
+      username: guest
+      password: guest
+
+rabbitmq:
+  queue:
+    name: chat-message
+    json:
+      name: chat-message_json
+  exchange:
+    name: chat-message_exchange
+  routing:
+    key: chat-message_routing_key
+    json:
+      key: chat-message_routing_json_key
 
 jwt:
   signerKey: "1TjXchw5FloESb63Kc+DFhTARvpWL4jUGCwfGWxuG5SIf/1y/LgJxHnMqaF6A/ij"

@@ -6,7 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 public interface MessagesService {
-    MessagesResponse sendMessage(MessagesRequest request, String conversationId);
+    MessagesResponse saveMessage(MessagesRequest request);
 
     MessagesResponse getMessageById(String messageId);
 

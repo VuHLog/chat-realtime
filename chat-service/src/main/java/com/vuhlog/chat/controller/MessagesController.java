@@ -21,9 +21,8 @@ public class MessagesController {
 
     @PostMapping("")
     public ApiResponse<MessagesResponse> sendMessage(@RequestBody MessagesRequest request) {
-        String conversationId = request.getConversationId();
         return ApiResponse.<MessagesResponse>builder()
-                .result(messagesService.sendMessage(request, conversationId))
+                .result(messagesService.saveMessage(request))
                 .build();
     }
 

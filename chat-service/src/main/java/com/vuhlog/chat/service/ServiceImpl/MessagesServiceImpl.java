@@ -30,14 +30,10 @@ public class MessagesServiceImpl implements MessagesService {
     private IdentityClient identityClient;
 
     @Override
-    public MessagesResponse sendMessage(MessagesRequest request, String conversationId) {
-        Conversations conversation = conversationsRepository.findById(conversationId).get();
+    public MessagesResponse saveMessage(MessagesRequest request) {
+        Conversations conversation = conversationsRepository.findById(request.getConversationId()).get();
         Messages messages = messagesMapper.toMessages(request);
         messages.setConversation(conversation);
-
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        String userId = identityClient.getUserByUsername(username).getResult().getId();
-        messages.setSenderId(userId);
 
         messages.setStatus("sent");
         messages = messagesRepository.save(messages);

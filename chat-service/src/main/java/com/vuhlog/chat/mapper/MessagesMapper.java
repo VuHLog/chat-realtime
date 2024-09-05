@@ -14,6 +14,8 @@ import java.text.SimpleDateFormat;
 
 @Mapper(componentModel = "spring")
 public interface MessagesMapper {
+    @Named("stringToTimestamp")
+    @Mapping(target = "timeSent", expression = "java(stringToTimestamp(request.getTimeSent()))")
     Messages toMessages(MessagesRequest request);
 
     @Named("timestampToString")

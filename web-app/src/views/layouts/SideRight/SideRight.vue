@@ -10,11 +10,12 @@ import {
 import { Client } from "@stomp/stompjs";
 import { useRoute } from "vue-router";
 import { useBaseStore } from "@/store/index.js";
-import FriendRequestsStatus from "@/constants/FriendRequestsStatus.js";
-import MessageContentType from "@/constants/MessageContentType.js";
 import data from "emoji-mart-vue-fast/data/all.json";
 import { Picker, EmojiIndex } from "emoji-mart-vue-fast/src";
 import "emoji-mart-vue-fast/css/emoji-mart.css";
+import { v4 as uuidv4 } from "uuid";
+import FriendRequestsStatus from "@/constants/FriendRequestsStatus.js";
+import MessageContentType from "@/constants/MessageContentType.js";
 import Header from "./Header.vue";
 
 const store = useBaseStore();
@@ -185,34 +186,22 @@ function disconnect() {
 
 async function sendMessage(contentType, url) {
   let messageRequest = {
+    id: uuidv4(),
+    senderId: myInfo.value.id,
     content: messageText.value,
     contentType: contentType,
+    timeSent: store.getCurrentDateTime(),
+    status: "sent",
     conversationId: conversationId.value,
   };
   if (contentType === MessageContentType.FILE) {
-    messageRequest = {
-      content: file.value.name,
-      contentType: contentType,
-      url: url,
-      conversationId: conversationId.value,
-    };
+    messageRequest.url = url;
+    messageRequest.content = file.value.name;
   }
-  let messageId = null;
-  await proxy.$api
-    .post("/chat/messages", messageRequest)
-    .then((res) => {
-      messageId = res.result.id;
-    })
-    .catch((error) => {
-      console.log(error.response.data.message);
-    });
 
   stompClient.publish({
     destination: "/app/sendMessage",
-    body: JSON.stringify({
-      conversationId: messageRequest.conversationId,
-      messagesId: messageId,
-    }),
+    body: JSON.stringify(messageRequest),
   });
   messageText.value = "";
   emojiPickerSelected.value = false;
