@@ -99,7 +99,7 @@ async function handleLoadConversation() {
       errorConversationNotExisted.value = false;
     })
     .catch((error) => {
-      data = error.response.data;
+      let data = error.response.data;
       if (data.code === 1015) {
         errorConversationNotExisted.value = true;
       }
