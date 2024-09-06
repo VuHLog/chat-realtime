@@ -13,6 +13,44 @@ const route = useRoute();
 const conversationId = ref(route.params.conversationId);
 const myUserId = ref("");
 
+const props = defineProps({
+  messageSent: {
+    type: Object,
+    default: null,
+  },
+  updateLastMessage: {
+    type: Object,
+    default: null,
+  },
+});
+
+watch(
+  () => props.messageSent,
+  (message) => {
+    updateLastConversation(message);
+  }
+);
+
+watch(
+  () => props.updateLastMessage,
+  (message) => {
+    if (Object.keys(message).length !== 0) {
+      updateLastConversation(message);
+    }
+  }
+);
+
+function updateLastConversation(message) {
+  let index = myConversations.value.findIndex(
+    (conversation) => conversation.id === message.conversationId
+  );
+  myConversations.value[index].lastMessage = message;
+  myConversations.value[index].lastMessageId = message.id;
+  let t = myConversations.value[0];
+  myConversations.value[0] = myConversations.value[index];
+  myConversations.value[index] = t;
+}
+
 onMounted(async () => {
   await store.getMyUserId().then((res) => {
     myUserId.value = res;
@@ -187,7 +225,9 @@ async function deleteConversation(conversationId) {
     .then((result) => {
       if (result.isConfirmed) {
         proxy.$api.delete("/chat/conversations/" + conversationId).then(() => {
-          myConversations.value = myConversations.value.filter((value) => value.id !== conversationId);
+          myConversations.value = myConversations.value.filter(
+            (value) => value.id !== conversationId
+          );
         });
       }
     });
@@ -320,7 +360,9 @@ async function deleteConversation(conversationId) {
                           : ""
                       }${conversation.lastMessage?.content}`
                     }}</span>
-                    <span class="ml-2">3 giờ</span>
+                    <span class="ml-2">{{
+                      conversation.lastMessage?.timeSent
+                    }}</span>
                   </div>
                 </div>
               </div>

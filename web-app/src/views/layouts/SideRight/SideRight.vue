@@ -23,7 +23,7 @@ const { proxy } = getCurrentInstance();
 const route = useRoute();
 const swal = inject("$swal");
 
-const emit = defineEmits(["updateEmoji"]);
+const emit = defineEmits(["updateEmoji", "send-message", "delete-message"]);
 const emojiPickerSelected = ref(false);
 const emojiIndex = ref(new EmojiIndex(data));
 function showEmoji(emoji) {
@@ -136,7 +136,7 @@ async function loadData() {
   await handleLoadMessages();
 }
 
-//xu ly real time voi stomp client
+//xu ly real time gui tin nhan voi stomp client
 //#region
 onBeforeUnmount(() => {
   disconnect();
@@ -208,6 +208,7 @@ async function sendMessage(contentType, url) {
     destination: "/app/sendMessage",
     body: JSON.stringify(messageRequest),
   });
+  emit("send-message", messageRequest);
   messageText.value = "";
   emojiPickerSelected.value = false;
 }
@@ -321,6 +322,12 @@ function deleteMessage(messageId) {
           messages.value = messages.value.filter(
             (value) => value.id !== messageId
           );
+          let message = {};
+          if (messages.value.length >= 1) {
+            message = messages.value[0];
+            message.conversationId = conversationId.value;
+          }
+          emit("delete-message", message);
         });
       }
     });
