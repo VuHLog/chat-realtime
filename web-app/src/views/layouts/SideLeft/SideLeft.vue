@@ -283,6 +283,7 @@ async function deleteConversation(conversationId) {
             <div
               class="d-flex align-center px-1 py-2 cursor-pointer chat-box rounded user-select-none position-relative"
               :class="conversation?.id === conversationId ? 'active' : ''"
+              v-if="conversation.lastMessageId !== 'null'"
             >
               <div
                 class="d-flex align-center w-100"

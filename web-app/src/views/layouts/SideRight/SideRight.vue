@@ -90,14 +90,19 @@ function handleScroll() {
   }
 }
 
+const errorConversationNotExisted = ref(false);
 async function handleLoadConversation() {
   await proxy.$api
     .get("/chat/conversations/" + conversationId.value)
     .then((res) => {
       conversation.value = res.result;
+      errorConversationNotExisted.value = false;
     })
     .catch((error) => {
-      console.log(error.response.data.message);
+      data = error.response.data;
+      if (data.code === 1015) {
+        errorConversationNotExisted.value = true;
+      }
     });
   let conversationVal = conversation.value;
   if (conversationVal.type === 1) {
@@ -324,227 +329,233 @@ function deleteMessage(messageId) {
 </script>
 
 <template>
-  <div
-    class="h-100 position-relative d-flex flex-column"
-    @scroll="handleScroll()"
-  >
-    <Header
-      ref="headerRef"
-      :receiver="receiver"
-      :isFriend="friendRequests?.status === FriendRequestsStatus.ACCEPTED"
-      class="position-sticky top-0 right-0 left-0 z-index-99 bg-white"
-      @unfriend="
-        (value) => {
-          unfriend(value);
-        }
-      "
-    ></Header>
-
+  <div class="h-100">
     <div
-      class="d-flex flex-column align-center mt-10 mb-5"
-      v-if="
-        messages.length === 0 ||
-        friendRequests?.status !== FriendRequestsStatus.ACCEPTED
-      "
+      class="h-100 position-relative d-flex flex-column"
+      @scroll="handleScroll()"
+      v-if="!errorConversationNotExisted"
     >
-      <div>
-        <img
-          class="height-avatar-thumbnail width-avatar-thumbnail rounded-circle object-cover object-center"
-          :src="receiver?.avatarUrl"
-          alt=""
-        />
-        <v-tooltip activator="parent" location="bottom">
-          <span class="text-12">{{ receiver?.username }}</span>
-        </v-tooltip>
-      </div>
-      <div class="ml-2 font-weight-bold">{{ receiver?.fullName }}</div>
-      <div
-        v-if="
-          friendRequests?.status ===
-          FriendRequestsStatus.FRIEND_REQUEST_NOT_EXISTED
+      <Header
+        ref="headerRef"
+        :receiver="receiver"
+        :isFriend="friendRequests?.status === FriendRequestsStatus.ACCEPTED"
+        class="position-sticky top-0 right-0 left-0 z-index-99 bg-white"
+        @unfriend="
+          (value) => {
+            unfriend(value);
+          }
         "
-        class="d-flex bg-deep-purple-accent-3 py-1 px-2 mt-1 cursor-pointer rounded-xl"
-        @click="addFriendRequest(receiver?.id)"
-      >
-        <div><font-awesome-icon :icon="['fas', 'user-plus']" /></div>
-        <span class="ml-2">Thêm bạn bè</span>
-      </div>
-      <div
-        v-if="
-          friendRequests?.status === FriendRequestsStatus.PENDING &&
-          myInfo.id === friendRequests?.senderId
-        "
-        class="d-flex bg-deep-purple-accent-3 py-1 px-2 mt-1 cursor-pointer rounded-xl"
-        @click="deleteFriendRequest()"
-      >
-        <div><font-awesome-icon :icon="['fas', 'user-plus']" /></div>
-        <span class="ml-2">Hủy lời mời</span>
-      </div>
-      <div
-        v-else-if="
-          friendRequests?.status === FriendRequestsStatus.PENDING &&
-          myInfo.id === friendRequests?.receiverId
-        "
-        class="d-flex bg-grey-lighten-1 py-1 px-2 mt-1 cursor-pointer rounded"
-      >
-        <span
-          class="bg-deep-purple-accent-3 py-1 px-2 rounded-lg text-12"
-          @click="acceptFriendRequest()"
-          >Chấp nhận lời mời</span
-        >
-        <span class="ml-2 py-1 px-2 text-12" @click="deleteFriendRequest"
-          >Xóa lời mời</span
-        >
-      </div>
-      <div v-if="friendRequests?.status === FriendRequestsStatus.ACCEPTED">
-        <span class="text-12">Bạn bè</span>
-      </div>
-    </div>
+      ></Header>
 
-    <!-- BODY -->
-    <div
-      ref="bodyRef"
-      class="flex-grow-1 d-flex flex-column-reverse overflow-y-auto"
-      :style="{ maxHeight: bodyHeight }"
-    >
-      <template v-for="message in messages" :key="message.id">
-        <div class="message">
-          <div
-            class="text-center text-grey-darken-1 text-12 font-weight-medium"
+      <div
+        class="d-flex flex-column align-center mt-10 mb-5"
+        v-if="
+          messages.length === 0 ||
+          friendRequests?.status !== FriendRequestsStatus.ACCEPTED
+        "
+      >
+        <div>
+          <img
+            class="height-avatar-thumbnail width-avatar-thumbnail rounded-circle object-cover object-center"
+            :src="receiver?.avatarUrl"
+            alt=""
+          />
+          <v-tooltip activator="parent" location="bottom">
+            <span class="text-12">{{ receiver?.username }}</span>
+          </v-tooltip>
+        </div>
+        <div class="ml-2 font-weight-bold">{{ receiver?.fullName }}</div>
+        <div
+          v-if="
+            friendRequests?.status ===
+            FriendRequestsStatus.FRIEND_REQUEST_NOT_EXISTED
+          "
+          class="d-flex bg-deep-purple-accent-3 py-1 px-2 mt-1 cursor-pointer rounded-xl"
+          @click="addFriendRequest(receiver?.id)"
+        >
+          <div><font-awesome-icon :icon="['fas', 'user-plus']" /></div>
+          <span class="ml-2">Thêm bạn bè</span>
+        </div>
+        <div
+          v-if="
+            friendRequests?.status === FriendRequestsStatus.PENDING &&
+            myInfo.id === friendRequests?.senderId
+          "
+          class="d-flex bg-deep-purple-accent-3 py-1 px-2 mt-1 cursor-pointer rounded-xl"
+          @click="deleteFriendRequest()"
+        >
+          <div><font-awesome-icon :icon="['fas', 'user-plus']" /></div>
+          <span class="ml-2">Hủy lời mời</span>
+        </div>
+        <div
+          v-else-if="
+            friendRequests?.status === FriendRequestsStatus.PENDING &&
+            myInfo.id === friendRequests?.receiverId
+          "
+          class="d-flex bg-grey-lighten-1 py-1 px-2 mt-1 cursor-pointer rounded"
+        >
+          <span
+            class="bg-deep-purple-accent-3 py-1 px-2 rounded-lg text-12"
+            @click="acceptFriendRequest()"
+            >Chấp nhận lời mời</span
           >
-            {{ message.timeSent }}
-          </div>
-          <div
-            class="d-flex align-center"
-            :class="{ 'justify-end': message.senderId === myInfo.id }"
+          <span class="ml-2 py-1 px-2 text-12" @click="deleteFriendRequest"
+            >Xóa lời mời</span
           >
-            <div class="d-flex max-w-40p px-4">
-              <div
-                class="d-flex align-end"
-                v-if="message.senderId !== myInfo.id"
-              >
-                <img
-                  class="width-avatar-chat height-avatar-chat rounded-circle object-cover object-center"
-                  :src="receiver?.avatarUrl"
-                  alt=""
-                />
-              </div>
-              <p
-                class="text-wrap w-100 rounded-xl text-14 px-3 py-2 ml-2"
-                :class="
-                  message.senderId === myInfo.id
-                    ? 'bg-purple-accent-4'
-                    : 'bg-grey-lighten-3'
-                "
-              >
-                <template
-                  v-if="message.contentType === MessageContentType.TEXT"
-                >
-                  {{ message.content }}
-                </template>
-                <a
-                  class="text-white"
-                  :href="message.url"
-                  v-else-if="message.contentType === MessageContentType.FILE"
-                  >{{ message.content }}</a
-                >
-              </p>
+        </div>
+        <div v-if="friendRequests?.status === FriendRequestsStatus.ACCEPTED">
+          <span class="text-12">Bạn bè</span>
+        </div>
+      </div>
+
+      <!-- BODY -->
+      <div
+        ref="bodyRef"
+        class="flex-grow-1 d-flex flex-column-reverse overflow-y-auto"
+        :style="{ maxHeight: bodyHeight }"
+      >
+        <template v-for="message in messages" :key="message.id">
+          <div class="message">
+            <div
+              class="text-center text-grey-darken-1 text-12 font-weight-medium"
+            >
+              {{ message.timeSent }}
             </div>
             <div
-              class="position-relative message_options"
-              :class="{ 'order-first': message.senderId === myInfo.id }"
-              v-if="message.senderId === myInfo.id"
+              class="d-flex align-center"
+              :class="{ 'justify-end': message.senderId === myInfo.id }"
             >
+              <div class="d-flex max-w-40p px-4">
+                <div
+                  class="d-flex align-end"
+                  v-if="message.senderId !== myInfo.id"
+                >
+                  <img
+                    class="width-avatar-chat height-avatar-chat rounded-circle object-cover object-center"
+                    :src="receiver?.avatarUrl"
+                    alt=""
+                  />
+                </div>
+                <p
+                  class="text-wrap w-100 rounded-xl text-14 px-3 py-2 ml-2"
+                  :class="
+                    message.senderId === myInfo.id
+                      ? 'bg-purple-accent-4'
+                      : 'bg-grey-lighten-3'
+                  "
+                >
+                  <template
+                    v-if="message.contentType === MessageContentType.TEXT"
+                  >
+                    {{ message.content }}
+                  </template>
+                  <a
+                    class="text-white"
+                    :href="message.url"
+                    v-else-if="message.contentType === MessageContentType.FILE"
+                    >{{ message.content }}</a
+                  >
+                </p>
+              </div>
               <div
-                class="w-28px h-28px rounded-circle d-none align-center justify-center message_options-icon cursor-pointer"
-                @click="deleteMessage(message.id)"
+                class="position-relative message_options"
+                :class="{ 'order-first': message.senderId === myInfo.id }"
+                v-if="message.senderId === myInfo.id"
               >
-                <font-awesome-icon :icon="['fas', 'trash']" />
-                <v-tooltip activator="parent" location="bottom">
-                  <span class="text-12">Gỡ</span>
-                </v-tooltip>
+                <div
+                  class="w-28px h-28px rounded-circle d-none align-center justify-center message_options-icon cursor-pointer"
+                  @click="deleteMessage(message.id)"
+                >
+                  <font-awesome-icon :icon="['fas', 'trash']" />
+                  <v-tooltip activator="parent" location="bottom">
+                    <span class="text-12">Gỡ</span>
+                  </v-tooltip>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </template>
-    </div>
-    <!-- END BODY -->
+        </template>
+      </div>
+      <!-- END BODY -->
 
-    <footer
-      ref="footerRef"
-      class="footer d-flex py-3 align-center position-relative"
-    >
-      <div class="text-purple-accent-4 pa-2 ma-1 cursor-pointer">
-        <label for="formFile" class="cursor-pointer">
-          <font-awesome-icon for="formFile" :icon="['far', 'file']" />
-        </label>
-        <v-tooltip activator="parent" location="bottom">
-          <span class="text-12">Đính kèm file</span>
-        </v-tooltip>
-        <input
-          class="w-100 py-2 pl-1 mt-6 d-none"
-          type="file"
-          id="formFile"
-          accept="application/msword, application/vnd.ms-excel, application/vnd.ms-powerpoint,
+      <footer
+        ref="footerRef"
+        class="footer d-flex py-3 align-center position-relative"
+      >
+        <div class="text-purple-accent-4 pa-2 ma-1 cursor-pointer">
+          <label for="formFile" class="cursor-pointer">
+            <font-awesome-icon for="formFile" :icon="['far', 'file']" />
+          </label>
+          <v-tooltip activator="parent" location="bottom">
+            <span class="text-12">Đính kèm file</span>
+          </v-tooltip>
+          <input
+            class="w-100 py-2 pl-1 mt-6 d-none"
+            type="file"
+            id="formFile"
+            accept="application/msword, application/vnd.ms-excel, application/vnd.ms-powerpoint,
 text/plain, application/pdf"
-          @change="handleFileUpload($event)"
-        />
-      </div>
-      <div
-        class="d-flex align-center px-2 bg-grey-lighten-4 rounded-xl flex-grow-1"
-      >
-        <textarea
-          name=""
-          id=""
-          v-model.trim="messageText"
-          @keydown="handlePressEnterTextArea"
-          rows="2"
-          class="d-flex align-center outline-none border-0 flex-grow-1 ml-2"
-          style="resize: none"
-          :disabled="friendRequests.status !== FriendRequestsStatus.ACCEPTED"
-          :class="{
-            'cursor-not-allowed':
-              friendRequests.status !== FriendRequestsStatus.ACCEPTED,
-          }"
-        ></textarea>
+            @change="handleFileUpload($event)"
+          />
+        </div>
         <div
-          class="text-purple-accent-4 pa-1 cursor-pointer position-relative"
-          @click="emojiPickerSelected = !emojiPickerSelected"
+          class="d-flex align-center px-2 bg-grey-lighten-4 rounded-xl flex-grow-1"
         >
-          <font-awesome-icon :icon="['fas', 'face-smile']" />
-          <v-tooltip activator="parent" location="bottom">
-            <span class="text-12">Chọn biểu tượng hoặc cảm xúc</span>
-          </v-tooltip>
+          <textarea
+            name=""
+            id=""
+            v-model.trim="messageText"
+            @keydown="handlePressEnterTextArea"
+            rows="2"
+            class="d-flex align-center outline-none border-0 flex-grow-1 ml-2"
+            style="resize: none"
+            :disabled="friendRequests.status !== FriendRequestsStatus.ACCEPTED"
+            :class="{
+              'cursor-not-allowed':
+                friendRequests.status !== FriendRequestsStatus.ACCEPTED,
+            }"
+          ></textarea>
+          <div
+            class="text-purple-accent-4 pa-1 cursor-pointer position-relative"
+            @click="emojiPickerSelected = !emojiPickerSelected"
+          >
+            <font-awesome-icon :icon="['fas', 'face-smile']" />
+            <v-tooltip activator="parent" location="bottom">
+              <span class="text-12">Chọn biểu tượng hoặc cảm xúc</span>
+            </v-tooltip>
+          </div>
         </div>
-      </div>
-      <Picker
-        v-if="emojiPickerSelected"
-        class="emoji-picker"
-        :data="emojiIndex"
-        emoji="point_up"
-        set="facebook"
-        :showPreview="false"
-        @select="showEmoji"
-      />
-      <div
-        class="text-purple-accent-4 pa-2 ma-1 cursor-pointer"
-        @click="sendLikeIcon()"
-      >
-        <div v-if="!showSentIcon">
-          <font-awesome-icon :icon="['fas', 'thumbs-up']" />
-          <v-tooltip activator="parent" location="bottom">
-            <span class="text-12">Gửi lượt thích</span>
-          </v-tooltip>
+        <Picker
+          v-if="emojiPickerSelected"
+          class="emoji-picker"
+          :data="emojiIndex"
+          emoji="point_up"
+          set="facebook"
+          :showPreview="false"
+          @select="showEmoji"
+        />
+        <div
+          class="text-purple-accent-4 pa-2 ma-1 cursor-pointer"
+          @click="sendLikeIcon()"
+        >
+          <div v-if="!showSentIcon">
+            <font-awesome-icon :icon="['fas', 'thumbs-up']" />
+            <v-tooltip activator="parent" location="bottom">
+              <span class="text-12">Gửi lượt thích</span>
+            </v-tooltip>
+          </div>
+          <div v-else @click="sendMessage(MessageContentType.TEXT, null)">
+            <font-awesome-icon :icon="['fas', 'paper-plane']" />
+            <v-tooltip activator="parent" location="bottom">
+              <span class="text-12">Nhấn Enter để gửi</span>
+            </v-tooltip>
+          </div>
         </div>
-        <div v-else @click="sendMessage(MessageContentType.TEXT, null)">
-          <font-awesome-icon :icon="['fas', 'paper-plane']" />
-          <v-tooltip activator="parent" location="bottom">
-            <span class="text-12">Nhấn Enter để gửi</span>
-          </v-tooltip>
-        </div>
-      </div>
-    </footer>
+      </footer>
+    </div>
+    <h1 v-else class="text-grey-lighten-1 text-center mt-16">
+      Cuộc trò chuyện không tồn tại
+    </h1>
   </div>
 </template>
 

@@ -5,6 +5,8 @@ import com.vuhlog.chat.dto.Response.ConversationsResponse;
 import com.vuhlog.chat.dto.Response.LatestConversationResponse;
 import com.vuhlog.chat.entity.Conversations;
 import com.vuhlog.chat.entity.GroupMember;
+import com.vuhlog.chat.exception.AppException;
+import com.vuhlog.chat.exception.ErrorCode;
 import com.vuhlog.chat.mapper.ConversationsMapper;
 import com.vuhlog.chat.repository.ConversationsRepository;
 import com.vuhlog.chat.repository.GroupMemberRepository;
@@ -68,7 +70,7 @@ public class ConversationsServiceImpl implements ConversationsService {
 
     @Override
     public ConversationsResponse getConversationById(String conversationId) {
-        Conversations conversation = conversationsRepository.findById(conversationId).get();
+        Conversations conversation = conversationsRepository.findById(conversationId).orElseThrow(() -> new AppException(ErrorCode.CONVERSATION_NOT_EXISTED));
         return conversationsMapper.toConversationsResponse(conversation);
     }
 

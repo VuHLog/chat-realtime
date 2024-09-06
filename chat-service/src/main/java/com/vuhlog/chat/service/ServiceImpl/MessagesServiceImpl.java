@@ -15,6 +15,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
+
 @Service
 public class MessagesServiceImpl implements MessagesService {
     @Autowired
@@ -47,14 +49,13 @@ public class MessagesServiceImpl implements MessagesService {
 
     @Override
     public MessagesResponse getMessageById(String messageId) {
-        Messages message = messagesRepository.findById(messageId).get();
+        Messages message = messagesRepository.findById(messageId).orElse(null);
         return messagesMapper.toMessagesResponse(message);
     }
 
     @Override
     public Page<MessagesResponse> getMessagesByConversationIdOrderByTimeSentDesc(String conversationId, Pageable pageable) {
-        return messagesRepository.findByConversation_IdOrderByTimeSentDesc(conversationId, pageable)
-                .map(messagesMapper::toMessagesResponse);
+        return messagesRepository.findByConversation_IdOrderByTimeSentDesc(conversationId, pageable).map(messagesMapper::toMessagesResponse);
     }
 
     @Override
@@ -64,6 +65,17 @@ public class MessagesServiceImpl implements MessagesService {
 
     @Override
     public void deleteMessageById(String messageId) {
-        messagesRepository.findById(messageId).ifPresent(message -> messagesRepository.deleteById(messageId));
+        //assign lastMessageId
+        messagesRepository.findById(messageId).flatMap(message -> conversationsRepository.findById(message.getConversation().getId()))
+                .ifPresent(
+                        conversation -> {
+                            messagesRepository.deleteById(messageId);
+                            if (messageId.equals(conversation.getLastMessageId())) {
+                                Optional<Messages> messagesOptional = messagesRepository.findTop1ByConversation_IdOrderByTimeSentDesc(conversation.getId());
+                                conversation.setLastMessageId(messagesOptional.map(Messages::getId).orElse(null));
+                                conversationsRepository.save(conversation);
+                            }
+                        }
+                );
     }
 }

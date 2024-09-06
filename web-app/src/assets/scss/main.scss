@@ -167,3 +167,17 @@ ol {
 .z-index-99{
   z-index: 99;
 }
+
+.capitalize {
+  text-transform: capitalize;
+}
+
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.truncate,
+.whitespace-nowrap {
+  white-space: nowrap;
+}
