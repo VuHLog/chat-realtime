@@ -1,39 +1,35 @@
 package com.vuhlog.chat.controller;
 
-import com.vuhlog.chat.Utils.TimestampUtil;
 import com.vuhlog.chat.dto.Request.MessagesRequest;
-import com.vuhlog.chat.publisher.RabbitMQJsonProducer;
-import com.vuhlog.chat.service.MessagesService;
+import com.vuhlog.notification.dto.Request.NotificationsRequest;
+import com.vuhlog.chat.kafka.NotificationProducer;
+import com.vuhlog.chat.service.ChatService;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.sql.Timestamp;
 
 @RestController
 public class ChatController {
-    private final SimpMessagingTemplate messagingTemplate;
+    private final ChatService chatService;
+    private final NotificationProducer notificationProducer;
 
-    private final RabbitMQJsonProducer rabbitMQJsonProducer;
-
-    public ChatController(SimpMessagingTemplate messagingTemplate, RabbitMQJsonProducer rabbitMQJsonProducer) {
-        this.messagingTemplate = messagingTemplate;
-        this.rabbitMQJsonProducer = rabbitMQJsonProducer;
+    public ChatController(ChatService chatService, NotificationProducer notificationProducer) {
+        this.chatService = chatService;
+        this.notificationProducer = notificationProducer;
     }
 
     @MessageMapping("/sendMessage")
-    public void sendMessage(@Payload MessagesRequest request) throws Exception {
-        String conversationId = request.getConversationId();
+    public void sendMessage(@Payload MessagesRequest request) {
+        chatService.sendMessage(request);
+    }
 
-        String timeSent = request.getTimeSent();
-        Timestamp timestamp =TimestampUtil.stringToTimestamp(timeSent);
-        request.setTimeSent(TimestampUtil.timestampToString(timestamp));
-        String destination = "/topic/conversations/" + conversationId;
-        messagingTemplate.convertAndSend(destination, request);
+    @MessageMapping("/sendNotification")
+    public void sendNotification(@Payload NotificationsRequest request) {
+        //send notification to notification-service
+        notificationProducer.sendNotifications(request);
 
-        request.setTimeSent(timeSent);
-        rabbitMQJsonProducer.sendJsonMessage(request);
+        // send notification realtime
+        chatService.sendNotification(request);
     }
 
 }
