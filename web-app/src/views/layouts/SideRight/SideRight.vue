@@ -16,6 +16,7 @@ import "emoji-mart-vue-fast/css/emoji-mart.css";
 import { v4 as uuidv4 } from "uuid";
 import FriendRequestsStatus from "@/constants/FriendRequestsStatus.js";
 import MessageContentType from "@/constants/MessageContentType.js";
+import NotificationType from "@/constants/NotificationType.js";
 import Header from "./Header.vue";
 
 const store = useBaseStore();
@@ -138,9 +139,6 @@ async function loadData() {
 
 //xu ly real time gui tin nhan voi stomp client
 //#region
-onBeforeUnmount(() => {
-  disconnect();
-});
 
 const showSentIcon = ref(false);
 watch(messageText, (newVal) => {
@@ -170,6 +168,29 @@ const stompClient = new Client({
         messages.value.unshift(JSON.parse(response.body));
       }
     );
+    console.log("my info : " + myInfo.value.id);
+    stompClient.subscribe(
+      "/topic/notifications/receiver/" + myInfo.value.id,
+      (response) => {
+        let responseBody = JSON.parse(response.body);
+        const Toast = swal.mixin({
+          toast: true,
+          position: "bottom-end",
+          showConfirmButton: false,
+          timer: 2000,
+          timerProgressBar: false,
+          didOpen: (toast) => {
+            toast.onmouseenter = swal.stopTimer;
+            toast.onmouseleave = swal.resumeTimer;
+          },
+        });
+        if(NotificationType.NEW_MESSAGE === responseBody.notificationType){
+          Toast.fire({
+            title: `<a href='http://localhost:5173/${responseBody.href}'style='display: inline-block;text-decoration: none; color: #00B0FF; width: 100%; text-align: center;'>Bạn có tin nhắn mới</a>`,
+          });
+        }
+      }
+    );
   },
   onWebSocketError: (error) => {
     console.error("Error with websocket", error);
@@ -189,6 +210,10 @@ function disconnect() {
   console.log("Disconnected");
 }
 
+onBeforeUnmount(() => {
+  disconnect();
+});
+
 async function sendMessage(contentType, url) {
   let messageRequest = {
     id: uuidv4(),
@@ -204,13 +229,36 @@ async function sendMessage(contentType, url) {
     messageRequest.content = file.value.name;
   }
 
+  // send notification to receiver
   stompClient.publish({
     destination: "/app/sendMessage",
     body: JSON.stringify(messageRequest),
   });
+
+  conversation.value.groupMembers
+      .filter((member) => member.userId != myInfo.value.id)
+      .map((member) => member.userId)
+      .forEach(receiverId => {
+        sendNotification(receiverId, messageText.value, NotificationType.NEW_MESSAGE, "/messages/"+ conversationId.value)
+      });
+
   emit("send-message", messageRequest);
   messageText.value = "";
   emojiPickerSelected.value = false;
+}
+
+function sendNotification(receiverId, content, notificationType, href){
+  let notificationRequest = {
+    senderId: myInfo.value.id,
+    receiverId: receiverId,
+    content: content,
+    notificationType: notificationType,
+    href: href,
+  };
+  stompClient.publish({
+    destination: "/app/sendNotification",
+    body: JSON.stringify(notificationRequest),
+  });
 }
 
 async function sendLikeIcon() {
@@ -310,7 +358,7 @@ function unfriend(status) {
 function deleteMessage(messageId) {
   swal
     .fire({
-      title: "Bạn có muốn tin nhắn này?",
+      title: "Xóa tin nhắn này?",
       showCancelButton: true,
       confirmButtonText: "Có",
       showCancelButton: true,
