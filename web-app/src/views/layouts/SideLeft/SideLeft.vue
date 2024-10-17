@@ -2,7 +2,8 @@
 import { ref, getCurrentInstance, watch, onMounted, inject } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useBaseStore } from "@/store";
-import setting from "@layouts/SideLeft/Setting.vue";
+import setting from "@layouts/SideLeft/UserSettings/Setting.vue";
+import notify from "@layouts/SideLeft/Notify/Notify.vue";
 
 const { proxy } = getCurrentInstance();
 const swal = inject("$swal");
@@ -207,11 +208,6 @@ async function chatWith(userId) {
 
 //#endregion
 
-//#region
-//xu ly hien thi cac option cho nguoi dung
-const showOptions = ref(false);
-//#endregion
-
 //xoa cuoc tro chuyen
 async function deleteConversation(conversationId) {
   swal
@@ -232,6 +228,18 @@ async function deleteConversation(conversationId) {
       }
     });
 }
+
+//xu ly hien thi cac option cho nguoi dung
+//#region
+const showOptions = ref(false);
+//#endregion
+
+//xu ly hien thi cac thong bao
+//#region
+const showNotify = ref(false);
+//#endregion
+
+
 </script>
 
 <template>
@@ -239,11 +247,19 @@ async function deleteConversation(conversationId) {
     <div>
       <div class="header py-3 px-1 d-flex align-center justify-space-between">
         <h2 class="font-weight-bold py-3 px-1">Đoạn chat</h2>
-        <div class="mr-3 cursor-pointer" @click="showOptions = !showOptions">
-          <font-awesome-icon class="setting-icon" :icon="['fas', 'gear']" />
-          <v-tooltip activator="parent" location="bottom">
-            <span class="text-12">Tùy chọn</span>
-          </v-tooltip>
+        <div class="d-flex">
+          <div class="mr-3 cursor-pointer" :class="{'text-purple-accent-4': showOptions}" @click="showOptions = !showOptions; showNotify= false">
+            <font-awesome-icon class="setting-icon" :icon="['fas', 'gear']" />
+            <v-tooltip activator="parent" location="bottom">
+              <span class="text-12">Tùy chọn</span>
+            </v-tooltip>
+          </div>
+          <div class="mr-3 cursor-pointer" :class="{'text-purple-accent-4': showNotify}" @click="showNotify = !showNotify; showOptions = false">
+            <font-awesome-icon class="notify-icon" :icon="['fas', 'bell']" />
+            <v-tooltip activator="parent" location="bottom">
+              <span class="text-12">Thông báo</span>
+            </v-tooltip>
+          </div>
         </div>
       </div>
       <div class="d-flex align-center search-box">
@@ -275,7 +291,14 @@ async function deleteConversation(conversationId) {
     </div>
 
     <transition name="slide-fade" mode="out-in">
-      <div class="mt-2 h-100 overflow-y-auto" v-if="!showOptions">
+      
+      <!-- SETTING -->
+      <setting v-if="showOptions"></setting>
+      
+      <!-- NOTIFY -->
+      <notify v-else-if="showNotify"></notify>
+
+      <div class="mt-2 h-100 overflow-y-auto" v-else>
         <!-- SEARCH RESULTS -->
         <div class="mt-1 pt-2" v-if="showBackChat">
           <div v-if="isUserExisted">
@@ -376,16 +399,13 @@ async function deleteConversation(conversationId) {
           </template>
         </div>
       </div>
-
-      <!-- SETTING -->
-      <setting v-else></setting>
     </transition>
   </div>
 </template>
 
 <style lang="scss" scoped>
 .header {
-  .setting-icon {
+  .setting-icon,.notify-icon {
     transition: all 0.4 linear;
     &:hover {
       transform: rotate(-20deg);
