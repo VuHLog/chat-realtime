@@ -39,7 +39,6 @@ public class SecurityConfiguration {
         httpSecurity.authorizeHttpRequests(
                 configurer -> configurer
                         .requestMatchers( HttpMethod.GET).permitAll()
-                        .requestMatchers( HttpMethod.POST,PUBLIC_ENDPOINTS).permitAll()
                         .anyRequest().authenticated()
         );
 
