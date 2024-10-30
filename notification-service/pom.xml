@@ -12,7 +12,7 @@
 	<artifactId>notification-service</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>notification-service</name>
-	<description>chat service</description>
+	<description>notification service</description>
 	<url/>
 	<licenses>
 		<license/>

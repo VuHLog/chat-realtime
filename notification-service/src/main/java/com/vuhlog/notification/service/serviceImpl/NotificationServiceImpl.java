@@ -42,7 +42,10 @@ public class NotificationServiceImpl implements NotificationService {
         notification.setSenderId(request.getSenderId());
         notification.setStatus(NotificationStatus.UNREAD.getStatus());
 
-        return notificationsMapper.toNotificationResponse(notificationRepository.save(notification));
+        notification = notificationRepository.save(notification);
+//        messagingTemplate.convertAndSend("/topic/notifications/receiver/" + 1, notification);
+
+        return notificationsMapper.toNotificationResponse(notification);
     }
 
     @Override

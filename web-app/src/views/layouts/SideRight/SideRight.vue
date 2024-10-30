@@ -159,7 +159,10 @@ function handlePressEnterTextArea(event) {
 }
 
 const stompClient = new Client({
-  brokerURL: "ws://localhost:8081/chat/ws",
+  brokerURL: "http://localhost:8081/chat/ws",
+  debug: (str) => {
+    console.log(str);
+  },
   onConnect: (frame) => {
     console.log("Connected: " + frame);
     stompClient.subscribe(
@@ -187,6 +190,10 @@ const stompClient = new Client({
         if(NotificationType.NEW_MESSAGE === responseBody.notificationType){
           Toast.fire({
             title: `<a href='http://localhost:5173/${responseBody.href}'style='display: inline-block;text-decoration: none; color: #00B0FF; width: 100%; text-align: center;'>Bạn có tin nhắn mới</a>`,
+          });
+        }else if(NotificationType.FRIEND_REQUEST === responseBody.notificationType){
+          Toast.fire({
+            title: `<a href='http://localhost:5173/${responseBody.href}'style='display: inline-block;text-decoration: none; color: #00B0FF; width: 100%; text-align: center;'>${myInfo.value.fullName} ${responseBody.content}</a>`,
           });
         }
       }
@@ -314,6 +321,7 @@ async function addFriendRequest(receiverId) {
     })
     .then((res) => {
       friendRequests.value = res.result;
+      sendNotification(receiver.value.id,"đã gửi lời mời kết bạn", NotificationType.FRIEND_REQUEST, "/messages/"+ conversationId.value)
     })
     .catch((error) => {
       console.log(error.response.data.message);
@@ -327,6 +335,7 @@ async function acceptFriendRequest() {
     })
     .then((res) => {
       friendRequests.value = res.result;
+      sendNotification(receiver.value.id,"đã đồng ý kết bạn", NotificationType.FRIEND_REQUEST, "/messages/"+ conversationId.value)
     })
     .catch((error) => {
       console.log(error.response.data.message);

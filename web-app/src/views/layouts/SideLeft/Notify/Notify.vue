@@ -1,9 +1,16 @@
 <script setup>
-import { ref, onMounted, onBeforeUnmount, getCurrentInstance, inject } from "vue";
+import {
+  ref,
+  onMounted,
+  onBeforeUnmount,
+  getCurrentInstance,
+  inject,
+} from "vue";
 import { useRouter } from "vue-router";
 import { useBaseStore } from "@/store/index.js";
 import { Client } from "@stomp/stompjs";
 import NotificationStatus from "@/constants/NotificationStatus.js";
+import NotificationType from "@/constants/NotificationType.js";
 
 const { proxy } = getCurrentInstance();
 const swal = inject("$swal");
@@ -14,12 +21,12 @@ const notifications = ref([]);
 const totalNotifyResults = ref(0);
 const pageSize = ref(5);
 const pageNumber = ref(1);
-const myInfo = ref({})
+const myInfo = ref({});
 
 onMounted(async () => {
   myInfo.value = await store.getMyInfo();
   await loadNotifications();
-  // await connect();
+  await connect();
 });
 
 async function loadNotifications() {
@@ -65,9 +72,11 @@ async function getReceiverName(userId) {
 //update notification status -> read
 async function updateNotificationStatus(notificationId) {
   await proxy.$api
-    .put("/notifications/" + notificationId + "/read",{})
+    .put("/notifications/" + notificationId + "/read", {})
     .then((res) => {
-      let index = notifications.value.findIndex((notification) => notification.id === notificationId);
+      let index = notifications.value.findIndex(
+        (notification) => notification.id === notificationId
+      );
       notifications.value[index].status = NotificationStatus.READ;
     })
     .catch((error) => console.log(error));
@@ -99,17 +108,18 @@ async function deleteNotify(notificationId) {
 }
 
 //xu ly notifications realtime - bị lỗi
-//#region 
+//#region
+// const token = localStorage.getItem("token");
 // const stompClient = new Client({
-//   brokerURL: "ws://localhost:8084/notifications/ws",
+//   brokerURL: "http://localhost:8084/notifications/ws",
+//   debug: (str) => {
+//     console.log(str);
+//   },
 //   onConnect: (frame) => {
 //     console.log("Connected: " + frame);
-//     stompClient.subscribe(
-//       "/topic/notifications/receiver/" + myInfo.value.id,
-//       (response) => {
-
-//       }
-//     );
+//     stompClient.subscribe("/topic/notifications/receiver/" + myInfo.value.id, (response) => {
+//       console.log(JSON.parse(response.body));
+//     });
 //   },
 //   onWebSocketError: (error) => {
 //     console.error("Error with websocket", error);
@@ -140,7 +150,10 @@ async function deleteNotify(notificationId) {
     <transition name="slide-fade" mode="out-in">
       <div class="mt-7 d-flex flex-column">
         <template v-for="notification in notifications" :key="notification.id">
-          <router-link :to="notification.href" class="text-decoration-none text-grey-darken-4">
+          <router-link
+            :to="notification.href"
+            class="text-decoration-none text-grey-darken-4"
+          >
             <div
               class="d-flex align-center w-100 px-1 py-2 cursor-pointer notify-box rounded user-select-none position-relative"
               @click="updateNotificationStatus(notification.id)"
@@ -161,15 +174,23 @@ async function deleteNotify(notificationId) {
                       <strong class="d-inline-block">{{
                         notification.fullName
                       }}</strong>
-                      đã gửi cho bạn một tin nhắn mới:
+                      <template v-if="notification.notificationType === NotificationType.NEW_MESSAGE">
+                        đã gửi cho bạn một tin nhắn mới:
                       {{ notification.content }}
+                      </template>
+                      <template v-else-if="notification.notificationType === NotificationType.FRIEND_REQUEST">
+                      {{ notification.content }}
+                      </template>
                     </p>
                   </div>
                   <div class="text-12 text-grey-darken-1">
                     <span>{{ notification.timestamp }}</span>
                   </div>
                 </div>
-                <div v-if="notification.status === NotificationStatus.UNREAD" class="text-purple-accent-4">
+                <div
+                  v-if="notification.status === NotificationStatus.UNREAD"
+                  class="text-purple-accent-4"
+                >
                   <font-awesome-icon :icon="['fas', 'circle']" />
                 </div>
               </div>
