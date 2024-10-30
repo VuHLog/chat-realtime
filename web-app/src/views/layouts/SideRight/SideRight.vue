@@ -269,6 +269,7 @@ function sendNotification(receiverId, content, notificationType, href){
 }
 
 async function sendLikeIcon() {
+  console.log("click like icon");
   messageText.value = "👍🏼";
   sendMessage(MessageContentType.TEXT, null);
 }
@@ -600,9 +601,8 @@ text/plain, application/pdf"
         />
         <div
           class="text-purple-accent-4 pa-2 ma-1 cursor-pointer"
-          @click="sendLikeIcon()"
         >
-          <div v-if="!showSentIcon">
+          <div v-if="!showSentIcon" @click="sendLikeIcon()">
             <font-awesome-icon :icon="['fas', 'thumbs-up']" />
             <v-tooltip activator="parent" location="bottom">
               <span class="text-12">Gửi lượt thích</span>
