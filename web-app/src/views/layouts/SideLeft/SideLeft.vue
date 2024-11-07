@@ -153,7 +153,7 @@ watch(searchText, (newVal) => {
 // load ket qua tim kiem
 const totalSearchResults = ref(0);
 const pageSizeSR = ref(10);
-const pageNumberSR = ref(1);
+const pageNumberSR = ref(10);
 async function loadSearchResults(username) {
   await proxy.$api
     .get(
@@ -298,7 +298,7 @@ const showNotify = ref(false);
       <!-- NOTIFY -->
       <notify v-else-if="showNotify"></notify>
 
-      <div class="mt-2 h-100 overflow-y-auto" v-else>
+      <div class="mt-2 h-100" v-else>
         <!-- SEARCH RESULTS -->
         <div class="mt-1 pt-2" v-if="showBackChat">
           <div v-if="isUserExisted">

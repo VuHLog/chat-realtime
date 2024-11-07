@@ -26,7 +26,7 @@ const myInfo = ref({});
 onMounted(async () => {
   myInfo.value = await store.getMyInfo();
   await loadNotifications();
-  await connect();
+  // await connect();
 });
 
 async function loadNotifications() {
@@ -171,7 +171,7 @@ async function deleteNotify(notificationId) {
                 >
                   <div class="d-flex">
                     <p class="">
-                      <strong class="d-inline-block">{{
+                      <strong class="d-inline-block mr-1">{{
                         notification.fullName
                       }}</strong>
                       <template v-if="notification.notificationType === NotificationType.NEW_MESSAGE">

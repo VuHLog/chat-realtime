@@ -33,12 +33,6 @@ function showEmoji(emoji) {
 
 const conversationId = ref(route.params.conversationId);
 
-// Các tham chiếu đến các phần tử Header và Footer và body
-const headerRef = ref(null);
-const footerRef = ref(null);
-const bodyRef = ref(null);
-const bodyHeight = ref(null);
-
 //pagination
 const totalElements = ref(0);
 const pageSize = ref(10);
@@ -49,13 +43,17 @@ const conversation = ref();
 const receiver = ref({});
 const messageText = ref("");
 const messages = ref([]);
+const stompClient = ref(null);
 
 onMounted(async () => {
+  myInfo.value = await store.getMyInfo();
+
+  if (myInfo.value) {
+    initializeStompClient();
+  }
+
   await connect();
 
-  calcBodyHeight();
-
-  myInfo.value = await store.getMyInfo();
   await loadData();
 });
 
@@ -67,30 +65,12 @@ watch(
     totalElements.value = 0;
     pageSize.value = 10;
     pageNumber.value = 1;
-    calcBodyHeight();
     loadData();
   }
 );
 
-//tinh body height
-function calcBodyHeight() {
-  bodyHeight.value = `calc(100vh - ${
-    headerRef.value.offsetHeight + footerRef.value.offsetHeight
-  }px)`;
-  bodyRef.value.style.height = bodyHeight.value;
-}
-
-//xu ly khi scroll
-function handleScroll() {
-  if (messages.value.length >= totalElements.value) return;
-
-  console.log("scrollTop");
-  if (bodyRef.value.scrollTop === 0) {
-    // pageNumber.value++;
-    // handleLoadMessages();
-  }
-}
-
+//xu ly load conversation, message
+//#region
 const errorConversationNotExisted = ref(false);
 async function handleLoadConversation() {
   await proxy.$api
@@ -137,6 +117,13 @@ async function loadData() {
   await handleLoadMessages();
 }
 
+async function clickLoadMoreMessages(){
+  if (messages.value.length >= totalElements.value) return;
+  pageSize.value += 10 * pageSize.value;
+  await handleLoadMessages();
+}
+//#endregion
+
 //xu ly real time gui tin nhan voi stomp client
 //#region
 
@@ -158,62 +145,73 @@ function handlePressEnterTextArea(event) {
   sendMessage(MessageContentType.TEXT, null);
 }
 
-const stompClient = new Client({
-  brokerURL: "http://localhost:8081/chat/ws",
-  debug: (str) => {
-    console.log(str);
-  },
-  onConnect: (frame) => {
-    console.log("Connected: " + frame);
-    stompClient.subscribe(
-      "/topic/conversations/" + conversationId.value,
-      (response) => {
-        messages.value.unshift(JSON.parse(response.body));
-      }
-    );
-    console.log("my info : " + myInfo.value.id);
-    stompClient.subscribe(
-      "/topic/notifications/receiver/" + myInfo.value.id,
-      (response) => {
-        let responseBody = JSON.parse(response.body);
-        const Toast = swal.mixin({
-          toast: true,
-          position: "bottom-end",
-          showConfirmButton: false,
-          timer: 2000,
-          timerProgressBar: false,
-          didOpen: (toast) => {
-            toast.onmouseenter = swal.stopTimer;
-            toast.onmouseleave = swal.resumeTimer;
-          },
-        });
-        if(NotificationType.NEW_MESSAGE === responseBody.notificationType){
-          Toast.fire({
-            title: `<a href='http://localhost:5173/${responseBody.href}'style='display: inline-block;text-decoration: none; color: #00B0FF; width: 100%; text-align: center;'>Bạn có tin nhắn mới</a>`,
-          });
-        }else if(NotificationType.FRIEND_REQUEST === responseBody.notificationType){
-          Toast.fire({
-            title: `<a href='http://localhost:5173/${responseBody.href}'style='display: inline-block;text-decoration: none; color: #00B0FF; width: 100%; text-align: center;'>${myInfo.value.fullName} ${responseBody.content}</a>`,
-          });
+function initializeStompClient() {
+  stompClient.value = new Client({
+    brokerURL: "http://localhost:8081/chat/ws",
+    // debug: (str) => {
+    //   console.log(str);
+    // },
+    onConnect: (frame) => {
+      console.log("Connected: " + frame);
+      stompClient.value.subscribe(
+        "/topic/conversations/" + conversationId.value,
+        (response) => {
+          messages.value.unshift(JSON.parse(response.body));
+          totalElements.value ++;
         }
-      }
-    );
-  },
-  onWebSocketError: (error) => {
-    console.error("Error with websocket", error);
-  },
-  onStompError: (frame) => {
-    console.error("Broker reported error: " + frame.headers["message"]);
-    console.error("Additional details: " + frame.body);
-  },
-});
+      );
 
+      if (myInfo.value && myInfo.value.id) {
+        console.log("my info : " + myInfo.value.id);
+        stompClient.value.subscribe(
+          "/topic/notifications/receiver/" + myInfo.value.id,
+          (response) => {
+            let responseBody = JSON.parse(response.body);
+            const Toast = swal.mixin({
+              toast: true,
+              position: "bottom-end",
+              showConfirmButton: false,
+              timer: 2000,
+              timerProgressBar: false,
+              didOpen: (toast) => {
+                toast.onmouseenter = swal.stopTimer;
+                toast.onmouseleave = swal.resumeTimer;
+              },
+            });
+            if (
+              NotificationType.NEW_MESSAGE === responseBody.notificationType
+            ) {
+              Toast.fire({
+                title: `<a href='http://localhost:5173/${responseBody.href}'style='display: inline-block;text-decoration: none; color: #00B0FF; width: 100%; text-align: center;'>Bạn có tin nhắn mới</a>`,
+              });
+            } else if (
+              NotificationType.FRIEND_REQUEST === responseBody.notificationType
+            ) {
+              Toast.fire({
+                title: `<a href='http://localhost:5173/${responseBody.href}'style='display: inline-block;text-decoration: none; color: #00B0FF; width: 100%; text-align: center;'>${myInfo.value.fullName} ${responseBody.content}</a>`,
+              });
+            }
+          }
+        );
+      } else {
+        console.warn("myInfo is undefined or missing id.");
+      }
+    },
+    onWebSocketError: (error) => {
+      console.error("Error with websocket", error);
+    },
+    onStompError: (frame) => {
+      console.error("Broker reported error: " + frame.headers["message"]);
+      console.error("Additional details: " + frame.body);
+    },
+  });
+}
 async function connect() {
-  stompClient.activate();
+  stompClient.value.activate();
 }
 
 function disconnect() {
-  stompClient.deactivate();
+  stompClient.value.deactivate();
   console.log("Disconnected");
 }
 
@@ -236,25 +234,34 @@ async function sendMessage(contentType, url) {
     messageRequest.content = file.value.name;
   }
 
-  // send notification to receiver
-  stompClient.publish({
+  if(messageRequest.content ==='') return ;
+
+  // send message to receiver
+  stompClient.value.publish({
     destination: "/app/sendMessage",
     body: JSON.stringify(messageRequest),
   });
 
+
+  //send notification to receiver
   conversation.value.groupMembers
-      .filter((member) => member.userId != myInfo.value.id)
-      .map((member) => member.userId)
-      .forEach(receiverId => {
-        sendNotification(receiverId, messageText.value, NotificationType.NEW_MESSAGE, "/messages/"+ conversationId.value)
-      });
+    .filter((member) => member.userId != myInfo.value.id)
+    .map((member) => member.userId)
+    .forEach((receiverId) => {
+      sendNotification(
+        receiverId,
+        messageText.value,
+        NotificationType.NEW_MESSAGE,
+        "/messages/" + conversationId.value
+      );
+    });
 
   emit("send-message", messageRequest);
   messageText.value = "";
   emojiPickerSelected.value = false;
 }
 
-function sendNotification(receiverId, content, notificationType, href){
+function sendNotification(receiverId, content, notificationType, href) {
   let notificationRequest = {
     senderId: myInfo.value.id,
     receiverId: receiverId,
@@ -262,7 +269,7 @@ function sendNotification(receiverId, content, notificationType, href){
     notificationType: notificationType,
     href: href,
   };
-  stompClient.publish({
+  stompClient.value.publish({
     destination: "/app/sendNotification",
     body: JSON.stringify(notificationRequest),
   });
@@ -293,7 +300,6 @@ async function submitFile() {
       console.log(res.url);
     })
     .catch((error) => console.log(error));
-  console.log(url);
   return url;
 }
 //#endregion
@@ -322,7 +328,12 @@ async function addFriendRequest(receiverId) {
     })
     .then((res) => {
       friendRequests.value = res.result;
-      sendNotification(receiver.value.id,"đã gửi lời mời kết bạn", NotificationType.FRIEND_REQUEST, "/messages/"+ conversationId.value)
+      sendNotification(
+        receiver.value.id,
+        "đã gửi lời mời kết bạn",
+        NotificationType.FRIEND_REQUEST,
+        "/messages/" + conversationId.value
+      );
     })
     .catch((error) => {
       console.log(error.response.data.message);
@@ -336,7 +347,12 @@ async function acceptFriendRequest() {
     })
     .then((res) => {
       friendRequests.value = res.result;
-      sendNotification(receiver.value.id,"đã đồng ý kết bạn", NotificationType.FRIEND_REQUEST, "/messages/"+ conversationId.value)
+      sendNotification(
+        receiver.value.id,
+        "đã đồng ý kết bạn",
+        NotificationType.FRIEND_REQUEST,
+        "/messages/" + conversationId.value
+      );
     })
     .catch((error) => {
       console.log(error.response.data.message);
@@ -386,6 +402,7 @@ function deleteMessage(messageId) {
             message.conversationId = conversationId.value;
           }
           emit("delete-message", message);
+          totalElements.value --;
         });
       }
     });
@@ -397,11 +414,9 @@ function deleteMessage(messageId) {
   <div class="h-100">
     <div
       class="h-100 position-relative d-flex flex-column"
-      @scroll="handleScroll()"
       v-if="!errorConversationNotExisted"
     >
       <Header
-        ref="headerRef"
         :receiver="receiver"
         :isFriend="friendRequests?.status === FriendRequestsStatus.ACCEPTED"
         class="position-sticky top-0 right-0 left-0 z-index-99 bg-white"
@@ -475,9 +490,8 @@ function deleteMessage(messageId) {
 
       <!-- BODY -->
       <div
-        ref="bodyRef"
         class="flex-grow-1 d-flex flex-column-reverse overflow-y-auto"
-        :style="{ maxHeight: bodyHeight }"
+        :style="{ height: 400 + 'px' }"
       >
         <template v-for="message in messages" :key="message.id">
           <div class="message">
@@ -540,13 +554,16 @@ function deleteMessage(messageId) {
             </div>
           </div>
         </template>
+        <span
+          class="cursor-pointer text-decoration-underline text-center text-light-blue-accent-3 text-14 mb-3"
+          @click="clickLoadMoreMessages()"
+          v-show="messages.length < totalElements"
+          >Tải thêm</span
+        >
       </div>
       <!-- END BODY -->
 
-      <footer
-        ref="footerRef"
-        class="footer d-flex py-3 align-center position-relative"
-      >
+      <footer class="footer d-flex py-3 align-center position-relative">
         <div class="text-purple-accent-4 pa-2 ma-1 cursor-pointer">
           <label for="formFile" class="cursor-pointer">
             <font-awesome-icon for="formFile" :icon="['far', 'file']" />
@@ -599,9 +616,7 @@ text/plain, application/pdf"
           :showPreview="false"
           @select="showEmoji"
         />
-        <div
-          class="text-purple-accent-4 pa-2 ma-1 cursor-pointer"
-        >
+        <div class="text-purple-accent-4 pa-2 ma-1 cursor-pointer">
           <div v-if="!showSentIcon" @click="sendLikeIcon()">
             <font-awesome-icon :icon="['fas', 'thumbs-up']" />
             <v-tooltip activator="parent" location="bottom">
