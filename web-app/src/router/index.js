@@ -22,10 +22,15 @@ const routes = [
       component: Home
       },
       { 
-        path: "/messages/:conversationId",
+        path: "/messages",
         name: "Messages",
         component: Messages
-        }
+      },
+      { 
+        path: "/messages/:conversationId",
+        name: "Messages by conversation",
+        component: Messages
+      }
     ],
   },
   {

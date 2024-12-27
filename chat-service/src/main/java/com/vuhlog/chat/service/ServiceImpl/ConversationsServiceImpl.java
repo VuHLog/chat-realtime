@@ -18,8 +18,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 @Service
 public class ConversationsServiceImpl implements ConversationsService {
@@ -71,6 +70,12 @@ public class ConversationsServiceImpl implements ConversationsService {
     @Override
     public ConversationsResponse getConversationById(String conversationId) {
         Conversations conversation = conversationsRepository.findById(conversationId).orElseThrow(() -> new AppException(ErrorCode.CONVERSATION_NOT_EXISTED));
+        String userId = getMyUserId();
+        List<GroupMember> groupMemberList = new ArrayList<>(conversation.getGroupMembers());
+        List<GroupMember> groupMembersCheck = groupMemberList.stream().filter(gm -> gm.getUserId().equals(userId)).toList();
+        if(groupMembersCheck.isEmpty()){
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
         return conversationsMapper.toConversationsResponse(conversation);
     }
 
@@ -96,5 +101,14 @@ public class ConversationsServiceImpl implements ConversationsService {
     private String getMyUserId(){
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         return identityClient.getUserByUsername(username).getResult().getId();
+    }
+
+    @Override
+    public boolean isInConversation(String conversationId) {
+        Conversations conversation = conversationsRepository.findById(conversationId).orElseThrow(() -> new AppException(ErrorCode.CONVERSATION_NOT_EXISTED));
+        String userId = getMyUserId();
+        List<GroupMember> groupMemberList = new ArrayList<>(conversation.getGroupMembers());
+        List<GroupMember> groupMembersCheck = groupMemberList.stream().filter(gm -> gm.getUserId().equals(userId)).toList();
+        return !groupMembersCheck.isEmpty();
     }
 }

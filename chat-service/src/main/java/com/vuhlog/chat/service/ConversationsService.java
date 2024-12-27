@@ -18,4 +18,6 @@ public interface ConversationsService {
     ConversationsResponse addConversation(ConversationsRequest request);
 
     void deleteConversation(String conversationId);
+
+    boolean isInConversation(String conversationId);
 }

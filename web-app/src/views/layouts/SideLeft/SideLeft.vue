@@ -209,7 +209,7 @@ async function chatWith(userId) {
 //#endregion
 
 //xoa cuoc tro chuyen
-async function deleteConversation(conversationId) {
+async function deleteConversation(conversationIdSelected) {
   swal
     .fire({
       title: "Bạn có muốn cuộc trò chuyện này?",
@@ -218,12 +218,18 @@ async function deleteConversation(conversationId) {
       showCancelButton: true,
       cancelButtonText: "Không",
     })
-    .then((result) => {
+    .then(async (result) => {
       if (result.isConfirmed) {
-        proxy.$api.delete("/chat/conversations/" + conversationId).then(() => {
+        await proxy.$api.delete("/chat/conversations/" + conversationIdSelected).then(() => {
           myConversations.value = myConversations.value.filter(
-            (value) => value.id !== conversationId
+            (value) => value.id !== conversationIdSelected
           );
+          if(myConversations.value.length > 0){
+            conversationId.value = myConversations.value[0].id;
+            router.push("/messages/" + conversationId.value);
+          }else{
+            router.push("/messages/");
+          }
         });
       }
     });
@@ -290,7 +296,7 @@ const showNotify = ref(false);
       </div>
     </div>
 
-    <transition name="slide-fade" mode="out-in">
+    <transition v-if="myConversations.length > 0 || showOptions || showBackChat || showNotify" name="slide-fade" mode="out-in">
       
       <!-- SETTING -->
       <setting v-if="showOptions"></setting>
@@ -400,6 +406,9 @@ const showNotify = ref(false);
         </div>
       </div>
     </transition>
+    <h1 v-else class="text-grey-lighten-1 text-center mt-16">
+      Hãy tạo cuộc trò chuyện mới
+    </h1>
   </div>
 </template>
 

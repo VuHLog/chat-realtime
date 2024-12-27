@@ -3,21 +3,27 @@ package com.vuhlog.chat.controller;
 import com.vuhlog.chat.dto.ApiResponse;
 import com.vuhlog.chat.dto.Request.MessagesRequest;
 import com.vuhlog.chat.dto.Response.MessagesResponse;
+import com.vuhlog.chat.exception.AppException;
+import com.vuhlog.chat.exception.ErrorCode;
+import com.vuhlog.chat.service.ConversationsService;
 import com.vuhlog.chat.service.MessagesService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.messaging.handler.annotation.MessageMapping;
-import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/messages")
 public class MessagesController {
-    @Autowired
-    private MessagesService messagesService;
+    private final MessagesService messagesService;
+
+    private final ConversationsService conversationsService;
+
+    public MessagesController(MessagesService messagesService, ConversationsService conversationsService) {
+        this.messagesService = messagesService;
+        this.conversationsService = conversationsService;
+    }
 
     @PostMapping("")
     public ApiResponse<MessagesResponse> sendMessage(@RequestBody MessagesRequest request) {
@@ -34,6 +40,10 @@ public class MessagesController {
             @RequestParam(name = "search", required = false, defaultValue = "") String search,
             @RequestParam(name = "conversationId", required = true, defaultValue = "0") String conversationId
     ) {
+        //check permission
+        if(!conversationsService.isInConversation(conversationId)){
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
 
         Sort sortable = Sort.by("timeSent").descending();
 

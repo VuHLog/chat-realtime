@@ -82,10 +82,12 @@ async function handleLoadConversation() {
     })
     .catch((error) => {
       let data = error.response.data;
-      if (data.code === 1015) {
+      if (data.code === 1015 || data.code === 1007) {
         errorConversationNotExisted.value = true;
       }
     });
+  
+  if(errorConversationNotExisted.value) return;
   let conversationVal = conversation.value;
   if (conversationVal.type === 1) {
     let receiverId = conversationVal.groupMembers.find((value) => {
@@ -114,8 +116,15 @@ async function handleLoadMessages() {
 }
 
 async function loadData() {
-  await handleLoadConversation();
-  await handleLoadMessages();
+  if(conversationId.value !== undefined){
+    await handleLoadConversation();
+  }else{
+    errorConversationNotExisted.value = true;
+  }
+  
+  if(!errorConversationNotExisted.value){
+    await handleLoadMessages();
+  }
 }
 
 async function clickLoadMoreMessages(){
@@ -183,18 +192,20 @@ function initializeStompClient() {
                 toast.onmouseleave = swal.resumeTimer;
               },
             });
-            if (
-              NotificationType.NEW_MESSAGE === responseBody.notificationType
-            ) {
-              Toast.fire({
-                title: `<a href='http://localhost:5173/${responseBody.href}'style='display: inline-block;text-decoration: none; color: #00B0FF; width: 100%; text-align: center;'>Bạn có tin nhắn mới</a>`,
-              });
-            } else if (
-              NotificationType.FRIEND_REQUEST === responseBody.notificationType
-            ) {
-              Toast.fire({
-                title: `<a href='http://localhost:5173/${responseBody.href}'style='display: inline-block;text-decoration: none; color: #00B0FF; width: 100%; text-align: center;'>${myInfo.value.fullName} ${responseBody.content}</a>`,
-              });
+            if("/messages/" + conversationId.value !== responseBody.href){ // check if recipient is in the conversation
+              if (
+                NotificationType.NEW_MESSAGE === responseBody.notificationType
+              ) {
+                Toast.fire({
+                  title: `<a href='http://localhost:5173/${responseBody.href}'style='display: inline-block;text-decoration: none; color: #00B0FF; width: 100%; text-align: center;'>Bạn có tin nhắn mới</a>`,
+                });
+              } else if (
+                NotificationType.FRIEND_REQUEST === responseBody.notificationType
+              ) {
+                Toast.fire({
+                  title: `<a href='http://localhost:5173/${responseBody.href}'style='display: inline-block;text-decoration: none; color: #00B0FF; width: 100%; text-align: center;'>${myInfo.value.fullName} ${responseBody.content}</a>`,
+                });
+              }
             }
           }
         );
