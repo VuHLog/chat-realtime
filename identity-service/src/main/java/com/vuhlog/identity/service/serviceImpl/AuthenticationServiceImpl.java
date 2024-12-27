@@ -103,7 +103,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         //tao body cho payload JWTClaimsSet
         JWTClaimsSet jwtClaimsSet =  new JWTClaimsSet.Builder()
                 .subject(user.getUsername())
-                .issuer("oppo.com")
+                .issuer("vuhlog.com")
                 .issueTime(new Date())
                 .expirationTime(new Date(
                         Instant.now().plus(VALID_DURATION, ChronoUnit.SECONDS).toEpochMilli() // het han sau VALID_DURATION giây

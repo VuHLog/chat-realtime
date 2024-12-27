@@ -17,6 +17,7 @@ import { v4 as uuidv4 } from "uuid";
 import FriendRequestsStatus from "@/constants/FriendRequestsStatus.js";
 import MessageContentType from "@/constants/MessageContentType.js";
 import NotificationType from "@/constants/NotificationType.js";
+import TokenService from "@/service/TokenService.js"
 import Header from "./Header.vue";
 
 const store = useBaseStore();
@@ -146,11 +147,15 @@ function handlePressEnterTextArea(event) {
 }
 
 function initializeStompClient() {
+  const token = TokenService.getLocalAccessToken();
   stompClient.value = new Client({
     brokerURL: "http://localhost:8081/chat/ws",
     // debug: (str) => {
     //   console.log(str);
     // },
+    connectHeaders:{
+      Authorization: `Bearer ${token}`,
+    },
     onConnect: (frame) => {
       console.log("Connected: " + frame);
       stompClient.value.subscribe(
