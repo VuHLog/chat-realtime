@@ -37,18 +37,14 @@ public class MessagesController {
             @RequestParam(name = "pageNumber", required = false, defaultValue = "0") Integer pageNumber,
             @RequestParam(name = "pageSize", required = false, defaultValue = "10") Integer pageSize,
             @RequestParam(name = "sort", required = false, defaultValue = "DESC") String sort,
-            @RequestParam(name = "search", required = false, defaultValue = "") String search,
-            @RequestParam(name = "conversationId", required = true, defaultValue = "0") String conversationId
+            @RequestParam(name = "conversationId", required = true, defaultValue = "0") String conversationId,
+            @RequestParam(name = "text", required = false, defaultValue = "0") String text
     ) {
         //check permission
         if(!conversationsService.isInConversation(conversationId)){
             throw new AppException(ErrorCode.UNAUTHORIZED);
         }
-
-        Sort sortable = Sort.by("timeSent").descending();
-
-        Pageable pageable = PageRequest.of(pageNumber, pageSize, sortable);
-        return messagesService.getMessagesByConversationIdOrderByTimeSentDesc(conversationId, pageable);
+        return messagesService.getMessagesByConversationIdOrderByTimeSentDesc(pageNumber, pageSize, sort, text, conversationId);
     }
 
     @GetMapping("/{messageId}")

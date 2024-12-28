@@ -8,14 +8,18 @@ const props = defineProps({
     type: Boolean,
     required: true,
   },
+  isShowMessageSearch:{
+    type: Boolean,
+    required: true
+  }
 });
 
 import { ref, getCurrentInstance, inject } from "vue";
 import FriendRequestsStatus from "@/constants/FriendRequestsStatus.js";
 
-const emit = defineEmits(["unfriend"])
+const emit = defineEmits(["unfriend","showMessageSearch"]);
 const swal = inject("$swal");
-const {proxy} = getCurrentInstance();
+const { proxy } = getCurrentInstance();
 
 function unFriend() {
   swal
@@ -24,14 +28,14 @@ function unFriend() {
       showCancelButton: true,
       confirmButtonText: "Có",
       showCancelButton: true,
-      cancelButtonText: "Không"
+      cancelButtonText: "Không",
     })
     .then((result) => {
       /* Read more about isConfirmed, isDenied below */
       if (result.isConfirmed) {
-        proxy.$api.delete("/friend/"+props.receiver.id).then(()=>{
-          emit("unfriend",FriendRequestsStatus.FRIEND_REQUEST_NOT_EXISTED )
-        })
+        proxy.$api.delete("/friend/" + props.receiver.id).then(() => {
+          emit("unfriend", FriendRequestsStatus.FRIEND_REQUEST_NOT_EXISTED);
+        });
       }
     });
 }
@@ -65,6 +69,9 @@ function unFriend() {
       </div>
       <div class="ml-5 cursor-pointer">
         <font-awesome-icon :icon="['fas', 'video']" />
+      </div>
+      <div class="ml-5 cursor-pointer" @click="emit('showMessageSearch', !isShowMessageSearch)">
+        <font-awesome-icon :icon="['fas', 'magnifying-glass']" />
       </div>
     </div>
   </div>

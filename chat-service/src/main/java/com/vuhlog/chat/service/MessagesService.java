@@ -10,7 +10,7 @@ public interface MessagesService {
 
     MessagesResponse getMessageById(String messageId);
 
-    Page<MessagesResponse> getMessagesByConversationIdOrderByTimeSentDesc(String conversationId, Pageable pageable);
+    Page<MessagesResponse> getMessagesByConversationIdOrderByTimeSentDesc(Integer pageNumber, Integer pageSize, String sort, String text, String conversationId);
 
     MessagesResponse MessageResponseWS(String messageId);
 

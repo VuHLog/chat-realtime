@@ -8,10 +8,14 @@ import com.vuhlog.chat.mapper.MessagesMapper;
 import com.vuhlog.chat.repository.ConversationsRepository;
 import com.vuhlog.chat.repository.MessagesRepository;
 import com.vuhlog.chat.repository.httpClients.IdentityClient;
+import com.vuhlog.chat.repository.specification.MessageSpecification;
 import com.vuhlog.chat.service.MessagesService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
@@ -54,7 +58,15 @@ public class MessagesServiceImpl implements MessagesService {
     }
 
     @Override
-    public Page<MessagesResponse> getMessagesByConversationIdOrderByTimeSentDesc(String conversationId, Pageable pageable) {
+    public Page<MessagesResponse> getMessagesByConversationIdOrderByTimeSentDesc(Integer pageNumber, Integer pageSize, String sort, String text, String conversationId) {
+        Sort sortable = Sort.by("timeSent").descending();
+        if(text !=null && text.length()>1){
+            Specification<Messages> specs = Specification.where(null);
+            specs = specs.and(MessageSpecification.fromConversation(conversationId).and(MessageSpecification.like(text)));
+            Pageable pageable = PageRequest.of(0, Integer.MAX_VALUE, sortable);
+            return messagesRepository.findAll(specs,pageable).map(messagesMapper::toMessagesResponse);
+        }
+        Pageable pageable = PageRequest.of(pageNumber, pageSize, sortable);
         return messagesRepository.findByConversation_IdOrderByTimeSentDesc(conversationId, pageable).map(messagesMapper::toMessagesResponse);
     }
 
