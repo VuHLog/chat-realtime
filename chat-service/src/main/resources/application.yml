@@ -49,11 +49,34 @@ rabbitmq:
     json:
       key: chat-message_routing_json_key
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    shutdown:
+      access: unrestricted
+  info:
+    env:
+      enabled: true
+
+eureka:
+  instance:
+    prefer-ip-address: true
+  client:
+    fetch-registry: true
+    register-with-eureka: true
+    service-url:
+      defaultZone: http://localhost:8070/eureka/
+
+info:
+  app:
+    name: "chat"
+    description: "Chat service application"
+    version: "1.0.0"
+
 jwt:
   signerKey: "1TjXchw5FloESb63Kc+DFhTARvpWL4jUGCwfGWxuG5SIf/1y/LgJxHnMqaF6A/ij"
   valid-duration: 36000 # in second
   refreshable-duration: 360000 # in seconds
-
-app:
-  services:
-    identity: http://localhost:8080/identity

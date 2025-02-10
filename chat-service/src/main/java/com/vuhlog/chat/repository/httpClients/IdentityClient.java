@@ -8,8 +8,8 @@ import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
-@FeignClient(name = "identity-service", url = "${app.services.identity}", configuration = {AuthenticationRequestInterceptor.class})
+@FeignClient(name = "identity-service", configuration = {AuthenticationRequestInterceptor.class})
 public interface IdentityClient {
-    @GetMapping(value = "/users/username/{username}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/identity/users/username/{username}", produces = MediaType.APPLICATION_JSON_VALUE)
     ApiResponse<UserResponse> getUserByUsername(@PathVariable   String username);
 }
